@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ระบบบันทึกเวลาทำงาน</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary-color: #06C755; --secondary-color: #4A90E2; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #333333; --border-color: #e0e0e0; }
+        body { font-family: 'Kanit', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; }
+        #app-header { background-color: var(--primary-color); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #employee-picture { width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; }
+        #main-content { padding: 1rem; }
+        .card { background-color: var(--card-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
+        .view-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
+        form { display: flex; flex-direction: column; gap: 1rem; }
+        .form-group label { font-weight: 500; margin-bottom: 0.25rem; }
+        .form-group input, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; }
+        .btn { width: 100%; padding: 1rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .btn:disabled { background-color: #cccccc; cursor: not-allowed; }
+        .btn-start { background-color: var(--primary-color); color: white; } .btn-end { background-color: #f5a623; color: white; } .btn-submit { background-color: var(--secondary-color); color: white; }
+        .main-view-buttons { display: flex; flex-direction: column; gap: 0.75rem; }
+        #history-table-wrapper { overflow-x: auto; }
+        .history-table { width: 100%; border-collapse: collapse; white-space: nowrap; } .history-table th, .history-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .hidden { display: none !important; }
+        #loading-view { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--card-bg); z-index: 999; }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s linear infinite; }
+        #loading-text { margin-top: 1rem; font-weight: 500; text-align: center; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div id="app-container" class="hidden">
+        <header id="app-header"><div id="header-text"><h1 class="font-bold text-xl">บันทึกเวลาทำงาน</h1><p id="employee-name" class="text-sm"></p></div><img id="employee-picture" src=""></header>
+        <main id="main-content"><div id="employee-info-box" class="card hidden"></div><div id="view-container"></div><div id="history-container" class="hidden"></div></main>
+    </div>
+    <div id="loading-view"><div class="spinner"></div><p id="loading-text">กำลังเริ่มต้น...</p></div>
+    
+    <script>
+        // ==========================================================
+        //  CLIENT-SIDE SCRIPT (CORRECTED VERSION)
+        // ==========================================================
+        window.addEventListener('DOMContentLoaded', () => {
+            const LIFF_ID = 'xxxx'; // ★★★★★★★★★★★★★★★★★★★★★★★
+            const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzDI78tUezqDWqN_NVojQZaioS5w2kZdOWernJDK0e0G-v7Ff0fYbS7G58ZjSdTdT_mcw/exec'; // ★★★
+            
+            // --- STATE & DOM ---
+            let liffProfile = {};
+            const dom = { app: document.getElementById('app-container'), loadingView: document.getElementById('loading-view'), loadingText: document.getElementById('loading-text'), header: { name: document.getElementById('employee-name'), picture: document.getElementById('employee-picture') }, viewContainer: document.getElementById('view-container'), infoBox: document.getElementById('employee-info-box'), historyContainer: document.getElementById('history-container') };
+            
+            // --- MAIN LOGIC ---
+            (async function main() {
+                try {
+                    await liff.init({ liffId: LIFF_ID });
+                    if (!liff.isLoggedIn()) { liff.login(); return; }
+                    dom.loadingText.textContent = 'กำลังดึงข้อมูล...';
+                    
+                    // --- THE FIX IS HERE ---
+                    liffProfile = await liff.getProfile(); // Get profile first
+                    const initialState = await serverCall('getWorkStateForToday', liffProfile.userId); // Use profile.userId
+                    
+                    renderUI(liffProfile, initialState);
+                    dom.app.classList.remove('hidden'); dom.loadingView.classList.add('hidden');
+                } catch (error) { dom.loadingText.innerHTML = `<span style="color:red; font-weight:bold;">Error:</span><br>${error.message}`; console.error(error); }
+            })();
+            
+            function serverCall(action, ...args) {
+                const url = GAS_WEB_APP_URL; const payload = { action: action, args: args };
+                return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, mode: 'cors'})
+                    .then(response => response.json())
+                    .then(data => { if(data.status === 'error') { throw new Error(data.message); } return data.response; });
+            }
+
+            function renderUI(p, s) { renderHeader(p); renderApp(s); }
+            function renderApp(s) { renderInfoBox(s); renderMainView(s); renderHistory(s); }
+            function renderHeader(p) { dom.header.name.textContent = p.displayName; dom.header.picture.src = p.pictureUrl; }
+            function renderInfoBox({ status: s, employeeData: d }) { if (s !== 'NOT_STARTED' && d) { dom.infoBox.innerHTML = `<p><b>ชื่อ:</b> ${d['ชื่อ - นามสกุล']}</p><p><b>ทะเบียนรถ:</b> ${d['ทะเบียนรถ']} | <b>สาขา:</b> ${d['สาขา']}</p>`; dom.infoBox.classList.remove('hidden'); } else { dom.infoBox.classList.add('hidden'); } }
+            function renderMainView({ status: s, workData: w }) { let h; switch (s) { case 'NOT_STARTED': case 'STARTED_NOT_ENDED': h = createMainMenuView(s); break; case 'COMPLETED': h = createSummaryView({ workData: w }); break; } dom.viewContainer.innerHTML = h; addEventListeners({ status: s, workData: w }); }
+            function renderHistory({ status: s }) { if (s === 'STARTED_NOT_ENDED' || s === 'COMPLETED') { serverCall('getWorkHistory', liffProfile.userId).then(h => { if (h && h.length > 0) { dom.historyContainer.innerHTML = createHistoryTableView(h); dom.historyContainer.classList.remove('hidden'); } }); } }
+            function createMainMenuView(s) { const st = s === 'NOT_STARTED'; return `<div class="view card"><h2 class="view-title">สถานะ: ${st ? 'ยังไม่เริ่มงาน' : 'กำลังปฏิบัติงาน'}</h2><div class="main-view-buttons"><button id="show-start-form-btn" class="btn btn-start" ${!st ? 'disabled' : ''}>ลงเวลาเริ่มงาน</button><button id="show-end-form-btn" class="btn btn-end" ${st || !s ? 'disabled' : ''}>ลงเวลาเลิกงาน</button></div></div>`; }
+            function createStartFormView() { return `<form id="start-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเริ่มงาน</h2><div class="form-group"><label>เวลาเริ่มงาน</label><input type="time" id="startTime" required></div><div class="form-group"><label>เลขไมล์เริ่มงาน</label><input type="number" id="startMileage" required></div><div class="form-group"><label>รูปถ่ายเลขไมล์เริ่มงาน</label><input type="file" id="startMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเริ่มงาน</label><input type="file" id="startEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเริ่มงาน</button></form>`; }
+            function createEndFormView({ workData: w }) { return `<form id="end-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเลิกงาน</h2><div class="card" style="background-color:#f8f9fa;"><b>เวลาเริ่ม:</b> ${w['เวลาเริ่มงาน']} | <b>เลขไมล์เริ่ม:</b> ${w['เลขไมล์เริ่มงาน']}</div><div class="form-group"><label>เวลาเลิกงาน</label><input type="time" id="endTime" required></div><div class="form-group"><label>เลขไมล์เลิกงาน</label><input type="number" id="endMileage" required></div><div class="form-group"><label>จำนวนรอบงาน</label><input type="number" id="workTrips" required></div><div class="form-group"><label>จุดส่งทั้งหมด</label><input type="number" id="totalDeliveryPoints" required></div><div class="form-group"><label>ส่งสำเร็จ</label><input type="number" id="successfulDeliveries" required></div><div class="form-group"><label>หมายเหตุ</label><textarea id="notes" rows="3"></textarea></div><div class="form-group"><label>รูปถ่ายเลขไมล์เลิกงาน</label><input type="file" id="endMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเลิกงาน</label><input type="file" id="endEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเลิกงาน</button></form>`; }
+            function createSummaryView({ workData: w }) { return `<div class="view card"><h2 class="view-title">สรุปข้อมูลประจำวัน</h2><p><b>เวลาทำงาน:</b> ${w['เวลาเริ่มงาน']} - ${w['เวลาเลิกงาน']} (${w['จำนวนชั่วโมงการทำงาน']} ชม.)</p><p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม']} กม.</p><p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p><p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p></div>`; }
+            function createHistoryTableView(h) { const c = ['ข้อมูลงานวันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => '<tr>' + c.map(col => `<td>${r[col] || '-'}</td>`).join('') + '</tr>').join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
+            function addEventListeners(s) { document.getElementById('show-start-form-btn')?.addEventListener('click', () => { dom.viewContainer.innerHTML = createStartFormView(); addEventListeners(s); }); document.getElementById('show-end-form-btn')?.addEventListener('click', () => { dom.viewContainer.innerHTML = createEndFormView(s); addEventListeners(s); }); document.getElementById('start-work-form')?.addEventListener('submit', handleStartWorkSubmit); document.getElementById('end-work-form')?.addEventListener('submit', (e) => handleEndWorkSubmit(e, s)); }
+            async function handleStartWorkSubmit(e) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; const data = { userId: liffProfile.userId, startTime: form.querySelector('#startTime').value, startMileage: form.querySelector('#startMileage').value, startMileagePhoto: await readFileAsBase64(form.querySelector('#startMileagePhoto').files[0]), startEmployeePhoto: await readFileAsBase64(form.querySelector('#startEmployeePhoto').files[0]), }; const result = await serverCall('saveStartWork', data); handleServerResponse(result); } catch (err) { alert(`Error: ${err.message}`); btn.disabled = false; btn.textContent = "บันทึก"; } }
+            async function handleEndWorkSubmit(e, state) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; if (Number(form.querySelector('#endMileage').value) <= Number(state.workData['เลขไมล์เริ่มงาน'])) { alert('เลขไมล์เลิกงานต้องมากกว่า'); btn.disabled = false; btn.textContent = "บันทึก"; return; } const data = { userId: liffProfile.userId, endTime: form.querySelector('#endTime').value, endMileage: form.querySelector('#endMileage').value, trips: form.querySelector('#workTrips').value, totalDeliveries: form.querySelector('#totalDeliveryPoints').value, successfulDeliveries: form.querySelector('#successfulDeliveries').value, notes: form.querySelector('#notes').value, endMileagePhoto: await readFileAsBase64(form.querySelector('#endMileagePhoto').files[0]), endEmployeePhoto: await readFileAsBase64(form.querySelector('#endEmployeePhoto').files[0]), }; const result = await serverCall('saveEndWork', data); handleServerResponse(result); } catch (err) { alert(`Error: ${err.message}`); btn.disabled = false; btn.textContent = "บันทึก"; } }
+            function handleServerResponse(result) { alert(result.message); if (result.status === 'success') { if (liff.isInClient()) liff.closeWindow(); else window.location.reload(); } }
+            function readFileAsBase64(file) { return new Promise((resolve, reject) => { if (!file) { resolve(null); return; } const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = () => reject(new Error('File read error')); reader.readAsDataURL(file); }); }
+        });
+    </script>
+</body>
+</html>
