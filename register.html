@@ -29,10 +29,25 @@
         <h2 class="view-title">ลงทะเบียนพนักงานใหม่</h2>
         <p style="text-align: center; margin-top: -1rem; margin-bottom: 1.5rem; color: #777;">กรุณากรอกข้อมูลของคุณเพื่อเริ่มใช้งานระบบ</p>
         <form id="register-form">
-            <div class="form-group"><label for="fullName">ชื่อ - นามสกุล</label><input type="text" id="fullName" required></div>
-            <div class="form-group"><label for="licensePlate">ทะเบียนรถ</label><input type="text" id="licensePlate" required></div>
-            <div class="form-group"><label for="contactNumber">เบอร์ติดต่อ</label><input type="tel" id="contactNumber" required></div>
-            <div class="form-group"><label for="branch">สาขา</label><input type="text" id="branch" required></div>
+            <div class="form-group">
+    <label for="fullName">ชื่อ - นามสกุล</label>
+    <input type="text" id="fullName" required placeholder="เช่น สมชาย ใจดี">
+</div>
+<div class="form-group">
+    <label for="licensePlate">ทะเบียนรถ</label>
+    <input type="text" id="licensePlate" required placeholder="เช่น 1กก-9999 กทม">
+</div>
+<div class="form-group">
+    <label for="contactNumber">เบอร์ติดต่อ</label>
+    <input type="tel" id="contactNumber" required placeholder="เช่น 0909999999">
+</div>
+            <div class="form-group">
+    <label for="branch">สาขา</label>
+    <select id="branch" required>
+        <option value="" disabled selected>-- กรุณาเลือกสาขา --</option>
+        <!-- ตัวเลือกสาขาจะถูกสร้างโดย JavaScript -->
+    </select>
+</div>
             <button type="submit" class="btn-submit">ลงทะเบียน</button>
         </form>
     </div>
@@ -46,17 +61,49 @@
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 liffProfile = await liff.getProfile();
-                document.getElementById('loading-view').style.display = 'none';
-                document.getElementById('register-form-container').style.display = 'block';
-            } catch (error) { document.querySelector('#loading-view p').innerHTML = `<span style="color:red;">Error: ${error.message}</span>`; }
-        }
-        main();
-        document.getElementById('register-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = e.target.querySelector('.btn-submit');
-            btn.disabled = true;
-            btn.textContent = 'กำลังลงทะเบียน...';
-            const data = { userId: liffProfile.userId, 'ชื่อ - นามสกุล': document.getElementById('fullName').value, 'ทะเบียนรถ': document.getElementById('licensePlate').value, 'เบอร์ติดต่อ': document.getElementById('contactNumber').value, 'สาขา': document.getElementById('branch').value };
+                 // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+        // เรียกข้อมูลสาขาจาก Backend
+        const branches = await serverCall('getBranchList');
+        // นำข้อมูลไปสร้าง Dropdown
+        populateBranchDropdown(branches);
+        
+        document.getElementById('loading-view').style.display = 'none';
+        document.getElementById('register-form-container').style.display = 'block';
+    } catch (error) {
+        document.querySelector('#loading-view p').innerHTML = `<span style="color:red;">Error: ${error.message}</span>`;
+    }
+}
+
+main();
+
+// ★★★★★★★★★★★★★★★★★★ เพิ่มฟังก์ชันใหม่ ★★★★★★★★★★★★★★★★★★
+function populateBranchDropdown(branches) {
+    const selectElement = document.getElementById('branch');
+    if (branches && branches.length > 0) {
+        branches.forEach(branchName => {
+            const option = document.createElement('option');
+            option.value = branchName;
+            option.textContent = branchName;
+            selectElement.appendChild(option);
+        });
+    }
+}
+
+// แก้ไข Event Listener ให้ดึงค่าจาก <select>
+document.getElementById('register-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('.btn-submit');
+    btn.disabled = true;
+    btn.textContent = 'กำลังลงทะเบียน...';
+
+    const data = {
+        userId: liffProfile.userId,
+        'ชื่อ - นามสกุล': document.getElementById('fullName').value,
+        'ทะเบียนรถ': document.getElementById('licensePlate').value,
+        'เบอร์ติดต่อ': document.getElementById('contactNumber').value,
+        'สาขา': document.getElementById('branch').value // ดึงค่าจาก <select>
+    };
+
             try {
                 const result = await serverCall('registerEmployee', data);
                 alert(result.message);
