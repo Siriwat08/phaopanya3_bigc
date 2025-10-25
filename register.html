@@ -19,8 +19,6 @@
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #06C755; animation: spin 1s linear infinite; margin: 2rem auto; }
         .hidden { display: none !important; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ★★★★★★★★★★★★★★★★★★ CSS สำหรับ Custom Popup ★★★★★★★★★★★★★★★★★★ */
         #custom-alert-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         #custom-alert-box { background-color: white; padding: 2rem; border-radius: 12px; text-align: center; width: 80%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         #custom-alert-title { margin-top: 0; font-size: 1.25rem; font-weight: 700; }
@@ -46,7 +44,6 @@
         </form>
     </div>
 
-    <!-- ★★★★★★★★★★★★★★★★★★ HTML สำหรับ Custom Popup ★★★★★★★★★★★★★★★★★★ -->
     <div id="custom-alert-overlay" class="hidden">
         <div id="custom-alert-box">
             <h3 id="custom-alert-title"></h3>
@@ -94,36 +91,37 @@
 
         document.getElementById('register-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-                // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
-    // ซ่อนฟอร์ม แล้วแสดงหน้า Loading แทน
-    document.getElementById('register-form-container').classList.add('hidden');
-    document.getElementById('loading-view').classList.remove('hidden');
-    document.querySelector('#loading-view p').textContent = 'กำลังลงทะเบียน...';
-    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-            
+            document.getElementById('register-form-container').classList.add('hidden');
+            document.getElementById('loading-view').classList.remove('hidden');
+            document.querySelector('#loading-view p').textContent = 'กำลังลงทะเบียน...';
+
             const data = { userId: liffProfile.userId, 'ชื่อ - นามสกุล': document.getElementById('fullName').value, 'ทะเบียนรถ': document.getElementById('licensePlate').value, 'เบอร์ติดต่อ': document.getElementById('contactNumber').value, 'สาขา': document.getElementById('branch').value };
 
             try {
                 const result = await serverCall('registerEmployee', data);
-                // ★★★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 2: เรียกใช้ Custom Popup ★★★★★★★★★★★★★★★★★★
-                 showCustomAlert(`คุณ ${liffProfile.displayName}`, result.message, true);
-    } catch (error) {
-        // ถ้า Error ให้ซ่อน Loading View แล้วแสดงฟอร์มกลับมา
-        document.getElementById('loading-view').classList.add('hidden');
-        document.getElementById('register-form-container').classList.remove('hidden');
-        showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
-    }
-});
+                document.getElementById('loading-view').classList.add('hidden');
+                showCustomAlert(`คุณ ${liffProfile.displayName}`, result.message, true);
+            } catch (error) {
+                document.getElementById('loading-view').classList.add('hidden');
+                document.getElementById('register-form-container').classList.remove('hidden');
+                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
+            }
+        });
         
         function serverCall(action, ...args) {
             const url = GAS_WEB_APP_URL;
             const payload = { action: action, args: args };
-            return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text-plain;charset=utf-8' }, mode: 'cors' })
-                .then(response => response.json())
-                .then(data => { if (data.status === 'error') { throw new Error(data.message); } return data.response; });
+            return fetch(url, {
+                method: 'POST',
+                body: JSON.stringify(payload),
+                // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ slash (/)
+                mode: 'cors'
+            })
+            .then(response => response.json())
+            .then(data => { if (data.status === 'error') { throw new Error(data.message); } return data.response; });
         }
 
-        // ★★★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 1: คัดลอก Popup Logic มาทั้งหมด ★★★★★★★★★★★★★★★★★★
         let countdownInterval;
         function showCustomAlert(title, message, isSuccess = false) {
             const overlay = document.getElementById('custom-alert-overlay');
@@ -164,7 +162,6 @@
 
         function closeAndExit() {
             document.getElementById('custom-alert-overlay').classList.add('hidden');
-            // หลังจากลงทะเบียน ให้ไปที่ index.html เสมอ
             window.location.href = './index.html';
         }
 
