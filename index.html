@@ -147,8 +147,57 @@ window.addEventListener('DOMContentLoaded', () => {
             function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = formatTimeForDisplay(r['เวลาเริ่มงาน']); const endTimeDisplay = formatTimeForDisplay(r['เวลาเลิกงาน']); const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
             function addEventListeners(s) { document.getElementById('show-start-form-btn')?.addEventListener('click', () => { dom.viewContainer.innerHTML = createStartFormView(); addEventListeners(s); }); document.getElementById('show-end-form-btn')?.addEventListener('click', () => { const summaryHTML = createStartWorkSummaryView(s); const formHTML = createEndFormView(s); dom.viewContainer.innerHTML = summaryHTML + formHTML; addEventListeners(s); }); document.getElementById('start-work-form')?.addEventListener('submit', handleStartWorkSubmit); document.getElementById('end-work-form')?.addEventListener('submit', (e) => handleEndWorkSubmit(e, s)); }
             
-            async function handleStartWorkSubmit(e) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; const data = { userId: liffProfile.userId, startTime: form.querySelector('#startTime').value, startMileage: form.querySelector('#startMileage').value, startMileagePhoto: await readFileAsBase64(form.querySelector('#startMileagePhoto').files[0]), startEmployeePhoto: await readFileAsBase64(form.querySelector('#startEmployeePhoto').files[0]), }; const result = await serverCall('saveStartWork', data); handleServerResponse(result); } catch (err) { showCustomAlert('เกิดข้อผิดพลาด', err.message, false); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเริ่มงาน"; } }
-            async function handleEndWorkSubmit(e, state) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; if (Number(form.querySelector('#endMileage').value) <= Number(state.workData['เลขไมล์เริ่มงาน'])) { showCustomAlert('ข้อมูลผิดพลาด', 'เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน', false); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; return; } const data = { userId: liffProfile.userId, endTime: form.querySelector('#endTime').value, endMileage: form.querySelector('#endMileage').value, trips: form.querySelector('#workTrips').value, totalDeliveries: form.querySelector('#totalDeliveryPoints').value, successfulDeliveries: form.querySelector('#successfulDeliveries').value, notes: form.querySelector('#notes').value, endMileagePhoto: await readFileAsBase64(form.querySelector('#endMileagePhoto').files[0]), endEmployeePhoto: await readFileAsBase64(form.querySelector('#endEmployeePhoto').files[0]), }; const result = await serverCall('saveEndWork', data); handleServerResponse(result); } catch (err) { showCustomAlert('เกิดข้อผิดพลาด', err.message, false); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; } }
+            async function handleStartWorkSubmit(e) {
+    e.preventDefault();
+    
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+    // แสดงหน้า Loading ก่อนเริ่มทำงาน
+    dom.loadingView.classList.remove('hidden');
+    dom.loadingText.textContent = 'กำลังบันทึกข้อมูลเริ่มงาน...';
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+    try {
+        const form = e.target;
+        // การอ่านไฟล์และการส่งข้อมูลจะเกิดขึ้นตอนที่หน้า Loading แสดงอยู่
+        const data = { userId: liffProfile.userId, startTime: form.querySelector('#startTime').value, startMileage: form.querySelector('#startMileage').value, startMileagePhoto: await readFileAsBase64(form.querySelector('#startMileagePhoto').files[0]), startEmployeePhoto: await readFileAsBase64(form.querySelector('#startEmployeePhoto').files[0]), };
+        const result = await serverCall('saveStartWork', data);
+        
+        // ซ่อนหน้า Loading ก่อนแสดง Popup
+        dom.loadingView.classList.add('hidden');
+        handleServerResponse(result);
+    } catch (err) {
+        // ถ้าเกิด Error ให้ซ่อนหน้า Loading ก่อน
+        dom.loadingView.classList.add('hidden');
+        showCustomAlert('เกิดข้อผิดพลาด', err.message, false);
+    }
+}
+           async function handleEndWorkSubmit(e, state) {
+    e.preventDefault();
+
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+    // แสดงหน้า Loading ก่อนเริ่มทำงาน
+    dom.loadingView.classList.remove('hidden');
+    dom.loadingText.textContent = 'กำลังบันทึกข้อมูลเลิกงาน...';
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+    try {
+        const form = e.target;
+        if (Number(form.querySelector('#endMileage').value) <= Number(state.workData['เลขไมล์เริ่มงาน'])) {
+            // ถ้าข้อมูลผิดพลาด ให้ซ่อน Loading View ก่อนแสดง Popup
+            dom.loadingView.classList.add('hidden');
+            showCustomAlert('ข้อมูลผิดพลาด', 'เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน', false);
+            return;
+        }
+        const data = { /* ... (โค้ดส่วนนี้เหมือนเดิม) ... */ };
+        const result = await serverCall('saveEndWork', data);
+
+        dom.loadingView.classList.add('hidden');
+        handleServerResponse(result);
+    } catch (err) {
+        dom.loadingView.classList.add('hidden');
+        showCustomAlert('เกิดข้อผิดพลาด', err.message, false);
+    }
+}
             
             function handleServerResponse(result) {
                 const title = `คุณ ${liffProfile.displayName}`;
