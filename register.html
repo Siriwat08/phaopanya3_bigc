@@ -94,22 +94,26 @@
 
         document.getElementById('register-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const btn = e.target.querySelector('.btn-submit');
-            btn.disabled = true;
-            btn.textContent = 'กำลังลงทะเบียน...';
-
+                // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+    // ซ่อนฟอร์ม แล้วแสดงหน้า Loading แทน
+    document.getElementById('register-form-container').classList.add('hidden');
+    document.getElementById('loading-view').classList.remove('hidden');
+    document.querySelector('#loading-view p').textContent = 'กำลังลงทะเบียน...';
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+            
             const data = { userId: liffProfile.userId, 'ชื่อ - นามสกุล': document.getElementById('fullName').value, 'ทะเบียนรถ': document.getElementById('licensePlate').value, 'เบอร์ติดต่อ': document.getElementById('contactNumber').value, 'สาขา': document.getElementById('branch').value };
 
             try {
                 const result = await serverCall('registerEmployee', data);
                 // ★★★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 2: เรียกใช้ Custom Popup ★★★★★★★★★★★★★★★★★★
-                showCustomAlert(`คุณ ${liffProfile.displayName}`, result.message, true); // true เพื่อให้นับถอยหลัง
-            } catch (error) {
-                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
-                btn.disabled = false;
-                btn.textContent = 'ลงทะเบียน';
-            }
-        });
+                 showCustomAlert(`คุณ ${liffProfile.displayName}`, result.message, true);
+    } catch (error) {
+        // ถ้า Error ให้ซ่อน Loading View แล้วแสดงฟอร์มกลับมา
+        document.getElementById('loading-view').classList.add('hidden');
+        document.getElementById('register-form-container').classList.remove('hidden');
+        showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
+    }
+});
         
         function serverCall(action, ...args) {
             const url = GAS_WEB_APP_URL;
