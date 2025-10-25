@@ -105,16 +105,25 @@ document.getElementById('register-form').addEventListener('submit', async functi
     };
 
             try {
-                const result = await serverCall('registerEmployee', data);
-                alert(result.message);
-                if (result.status === 'success' || result.status === 'exists') {
-                    window.location.href = './index.html';
-                }
-            } catch (error) {
-                alert('เกิดข้อผิดพลาด: ' + error.message);
-                btn.disabled = false;
-                btn.textContent = 'ลงทะเบียน';
-            }
+    const result = await serverCall('registerEmployee', data);
+    
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+    const alertMessage = `คุณ ${liffProfile.displayName},\n\n${result.message}`;
+    alert(alertMessage);
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+    if (result.status === 'success' || result.status === 'exists') {
+        window.location.href = './index.html';
+    }
+} catch (error) {
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข (สำหรับ Error) ★★★★★★★★★★★★★★★★★★
+    const errorMessage = `เกิดข้อผิดพลาด:\n\n${error.message}`;
+    alert(errorMessage);
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+    btn.disabled = false;
+    btn.textContent = 'ลงทะเบียน';
+}
         });
         function serverCall(action, ...args) {
             const url = GAS_WEB_APP_URL;
