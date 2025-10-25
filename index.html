@@ -165,7 +165,22 @@ window.addEventListener('DOMContentLoaded', () => {
 
     async function handleStartWorkSubmit(e) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; const data = { userId: liffProfile.userId, startTime: form.querySelector('#startTime').value, startMileage: form.querySelector('#startMileage').value, startMileagePhoto: await readFileAsBase64(form.querySelector('#startMileagePhoto').files[0]), startEmployeePhoto: await readFileAsBase64(form.querySelector('#startEmployeePhoto').files[0]), }; const result = await serverCall('saveStartWork', data); handleServerResponse(result); } catch (err) { alert(`Error: ${err.message}`); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเริ่มงาน"; } }
     async function handleEndWorkSubmit(e, state) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; if (Number(form.querySelector('#endMileage').value) <= Number(state.workData['เลขไมล์เริ่มงาน'])) { alert('เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน'); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; return; } const data = { userId: liffProfile.userId, endTime: form.querySelector('#endTime').value, endMileage: form.querySelector('#endMileage').value, trips: form.querySelector('#workTrips').value, totalDeliveries: form.querySelector('#totalDeliveryPoints').value, successfulDeliveries: form.querySelector('#successfulDeliveries').value, notes: form.querySelector('#notes').value, endMileagePhoto: await readFileAsBase64(form.querySelector('#endMileagePhoto').files[0]), endEmployeePhoto: await readFileAsBase64(form.querySelector('#endEmployeePhoto').files[0]), }; const result = await serverCall('saveEndWork', data); handleServerResponse(result); } catch (err) { alert(`Error: ${err.message}`); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; } }
-    function handleServerResponse(result) { alert(result.message); if (result.status === 'success') { if (liff.isInClient()) { liff.closeWindow(); } else { dom.loadingView.classList.remove('hidden'); dom.loadingText.textContent = "กำลังโหลดข้อมูลใหม่..."; setTimeout(() => window.location.reload(), 500); } } }
+    function handleServerResponse(result) {
+    // สร้างข้อความใหม่โดยการนำชื่อผู้ใช้ (displayName) มาต่อกับข้อความจากเซิร์ฟเวอร์
+    const alertMessage = `คุณ ${liffProfile.displayName},\n\n${result.message}`;
+    
+    alert(alertMessage); // แสดงข้อความใหม่ที่มีชื่อผู้ใช้
+    
+    if (result.status === 'success') { 
+        if (liff.isInClient()) { 
+            liff.closeWindow(); 
+        } else { 
+            dom.loadingView.classList.remove('hidden'); 
+            dom.loadingText.textContent = "กำลังโหลดข้อมูลใหม่..."; 
+            setTimeout(() => window.location.reload(), 500); 
+        } 
+    } 
+}
     function readFileAsBase64(file) { return new Promise((resolve, reject) => { if (!file) { resolve(''); return; } const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = () => reject(new Error('File read error')); reader.readAsDataURL(file); }); }
     function formatDateForDisplay(dateValue) { if (!dateValue) return '-'; const date = new Date(dateValue); if (isNaN(date.getTime())) { return dateValue; } const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
     // ★★★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 3: ฟังก์ชันจัดรูปแบบเวลา (สำคัญที่สุด) ★★★★★★★★★★★★★★★★★★
