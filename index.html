@@ -121,10 +121,31 @@ window.addEventListener('DOMContentLoaded', () => {
                     <button type="submit" class="btn btn-submit">บันทึกข้อมูลเลิกงาน</button>
                 </form>`;
     }
-    
-    function createSummaryView({ workData: w }) { return `<div class="view card"><h2 class="view-title">สรุปข้อมูลประจำวัน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาทำงาน:</b> ${w['เวลาเริ่มงาน']} - ${w['เวลาเลิกงาน']} (${w['จำนวนชั่วโมงการทำงาน'] || 'N/A'} ชม.)</p><p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p><p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p><p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p></div>`; }
-    function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = formatTimeForDisplay(r['เวลาเริ่มงาน']); const endTimeDisplay = formatTimeForDisplay(r['เวลาเลิกงาน']); const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
-    
+        // ★★★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 1: หน้าสรุปข้อมูล ★★★★★★★★★★★★★★★★★★
+    function createSummaryView({ workData: w }) {
+        return `<div class="view card">
+                    <h2 class="view-title">สรุปข้อมูลประจำวัน</h2>
+                    <p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p>
+                    <p><b>เวลาทำงาน:</b> ${formatTimeForDisplay(w['เวลาเริ่มงาน'])} - ${formatTimeForDisplay(w['เวลาเลิกงาน'])} (${w['จำนวนชั่วโมงการทำงาน'] || 'N/A'} ชม.)</p>
+                    <p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p>
+                    <p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p>
+                    <p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p>
+                </div>`;
+    }
+
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 2: ตารางประวัติ ★★★★★★★★★★★★★★★★★★
+    function createHistoryTableView(h) {
+        const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม']; // ตัดคอลัมน์ที่ไม่จำเป็นออกเพื่อให้กระชับ
+        let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>';
+        let tb = h.map(r => {
+            const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']);
+            const startTimeDisplay = formatTimeForDisplay(r['เวลาเริ่มงาน']);
+            const endTimeDisplay = formatTimeForDisplay(r['เวลาเลิกงาน']);
+            const mileageDisplay = r['ระยะทางรวม'] || '-';
+            return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td></tr>`;
+        }).join('');
+        return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`;
+    }
     // ★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 3: ปรับปรุงการแสดงผลหน้าเลิกงาน ★★★★★★★★★★★★★★★★★★
     function addEventListeners(s) {
         document.getElementById('show-start-form-btn')?.addEventListener('click', () => {
@@ -147,7 +168,23 @@ window.addEventListener('DOMContentLoaded', () => {
     function handleServerResponse(result) { alert(result.message); if (result.status === 'success') { if (liff.isInClient()) { liff.closeWindow(); } else { dom.loadingView.classList.remove('hidden'); dom.loadingText.textContent = "กำลังโหลดข้อมูลใหม่..."; setTimeout(() => window.location.reload(), 500); } } }
     function readFileAsBase64(file) { return new Promise((resolve, reject) => { if (!file) { resolve(''); return; } const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = () => reject(new Error('File read error')); reader.readAsDataURL(file); }); }
     function formatDateForDisplay(dateValue) { if (!dateValue) return '-'; const date = new Date(dateValue); if (isNaN(date.getTime())) { return dateValue; } const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
-    function formatTimeForDisplay(timeValue) { if (!timeValue) return '-'; if (typeof timeValue === 'string' && timeValue.includes(':')) { return timeValue.substring(0, 5); } const date = new Date(timeValue); if (isNaN(date.getTime())) { return '-'; } const hours = String(date.getHours()).padStart(2, '0'); const minutes = String(date.getMinutes()).padStart(2, '0'); return `${hours}:${minutes}`; }
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 3: ฟังก์ชันจัดรูปแบบเวลา (สำคัญที่สุด) ★★★★★★★★★★★★★★★★★★
+    function formatTimeForDisplay(timeValue) {
+        if (!timeValue) return '-';
+        // ถ้าข้อมูลเป็น String 'HH:mm' ที่ถูกต้องอยู่แล้ว (จากการใช้ ')
+        // ให้คืนค่าเดิมโดยตรง
+        if (typeof timeValue === 'string' && /^\d{2}:\d{2}$/.test(timeValue)) {
+            return timeValue;
+        }
+        // ถ้าเป็น Date Object (จากข้อมูลเก่าที่เพี้ยน) ให้สกัดเอาเฉพาะเวลา
+        const date = new Date(timeValue);
+        if (isNaN(date.getTime())) {
+            return '-'; // ถ้าแปลงไม่ได้ ให้คืนค่าขีด
+        }
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    }
 });
 </script>
 </body>
