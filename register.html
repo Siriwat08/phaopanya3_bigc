@@ -12,18 +12,12 @@
         .view-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 1.5rem; color: #333; }
         form { display: flex; flex-direction: column; gap: 1rem; }
         .form-group label { font-weight: 500; margin-bottom: 0.25rem; color: #555; }
-        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #e0e0e0; border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; }
+        .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #e0e0e0; border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; }
         .btn-submit { width: 100%; padding: 1rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; background-color: #06C755; color: white; margin-top: 1rem; }
         .btn-submit:disabled { background-color: #cccccc; }
         #loading-view { text-align: center; }
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #06C755; animation: spin 1s linear infinite; margin: 2rem auto; }
-        .hidden { display: none !important; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        #custom-alert-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        #custom-alert-box { background-color: white; padding: 2rem; border-radius: 12px; text-align: center; width: 80%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        #custom-alert-title { margin-top: 0; font-size: 1.25rem; font-weight: 700; }
-        #custom-alert-message { font-size: 1rem; color: #555; margin-bottom: 1.5rem; }
-        #custom-alert-close-btn { width: 100%; padding: 0.75rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 500; cursor: pointer; background-color: #06C755; color: white; }
     </style>
 </head>
 <body>
@@ -31,140 +25,56 @@
         <div class="spinner"></div>
         <p>กำลังเตรียมหน้าลงทะเบียน...</p>
     </div>
-
-    <div id="register-form-container" class="card hidden">
+    <div id="register-form-container" class="card" style="display: none;">
         <h2 class="view-title">ลงทะเบียนพนักงานใหม่</h2>
         <p style="text-align: center; margin-top: -1rem; margin-bottom: 1.5rem; color: #777;">กรุณากรอกข้อมูลของคุณเพื่อเริ่มใช้งานระบบ</p>
         <form id="register-form">
-            <div class="form-group"><label for="fullName">ชื่อ - นามสกุล</label><input type="text" id="fullName" required placeholder="เช่น สมชาย ใจดี"></div>
-            <div class="form-group"><label for="licensePlate">ทะเบียนรถ</label><input type="text" id="licensePlate" required placeholder="เช่น 1กก-9999 กทม"></div>
-            <div class="form-group"><label for="contactNumber">เบอร์ติดต่อ</label><input type="tel" id="contactNumber" required placeholder="เช่น 0909999999"></div>
-            <div class="form-group"><label for="branch">สาขา</label><select id="branch" required><option value="" disabled selected>-- กรุณาเลือกสาขา --</option></select></div>
+            <div class="form-group"><label for="fullName">ชื่อ - นามสกุล</label><input type="text" id="fullName" required></div>
+            <div class="form-group"><label for="licensePlate">ทะเบียนรถ</label><input type="text" id="licensePlate" required></div>
+            <div class="form-group"><label for="contactNumber">เบอร์ติดต่อ</label><input type="tel" id="contactNumber" required></div>
+            <div class="form-group"><label for="branch">สาขา</label><input type="text" id="branch" required></div>
             <button type="submit" class="btn-submit">ลงทะเบียน</button>
         </form>
     </div>
-
-    <div id="custom-alert-overlay" class="hidden">
-        <div id="custom-alert-box">
-            <h3 id="custom-alert-title"></h3>
-            <p id="custom-alert-message"></p>
-            <button id="custom-alert-close-btn"></button>
-        </div>
-    </div>
-
     <script>
-        const LIFF_ID = '2008326721-bmkWomzv'; 
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzDI78tUezqDWqN_NVojQZaioS5w2kZdOWernJDK0e0G-v7Ff0fYbS7G58ZjSdTdT_mcw/exec';
-
+        const LIFF_ID = '2008326721-bmkWomzv'; // ★★★ ใส่ LIFF ID ของคุณที่นี่ ★★★
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzDI78tUezqDWqN_NVojQZaioS5w2kZdOWernJDK0e0G-v7Ff0fYbS7G58ZjSdTdT_mcw/exec'; // ★★★ ใส่ URL ใหม่ล่าสุด ★★★
         let liffProfile = null;
-
         async function main() {
             try {
                 await liff.init({ liffId: LIFF_ID });
                 if (!liff.isLoggedIn()) { liff.login(); return; }
                 liffProfile = await liff.getProfile();
-                
-                const branches = await serverCall('getBranchList');
-                populateBranchDropdown(branches);
-                
-                document.getElementById('loading-view').classList.add('hidden');
-                document.getElementById('register-form-container').classList.remove('hidden');
-            } catch (error) {
-                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
-                document.getElementById('loading-view').classList.add('hidden');
-            }
+                document.getElementById('loading-view').style.display = 'none';
+                document.getElementById('register-form-container').style.display = 'block';
+            } catch (error) { document.querySelector('#loading-view p').innerHTML = `<span style="color:red;">Error: ${error.message}</span>`; }
         }
-
         main();
-
-        function populateBranchDropdown(branches) {
-            const selectElement = document.getElementById('branch');
-            if (branches && branches.length > 0) {
-                branches.forEach(branchName => {
-                    const option = document.createElement('option');
-                    option.value = branchName;
-                    option.textContent = branchName;
-                    selectElement.appendChild(option);
-                });
-            }
-        }
-
         document.getElementById('register-form').addEventListener('submit', async function(e) {
             e.preventDefault();
-            document.getElementById('register-form-container').classList.add('hidden');
-            document.getElementById('loading-view').classList.remove('hidden');
-            document.querySelector('#loading-view p').textContent = 'กำลังลงทะเบียน...';
-
+            const btn = e.target.querySelector('.btn-submit');
+            btn.disabled = true;
+            btn.textContent = 'กำลังลงทะเบียน...';
             const data = { userId: liffProfile.userId, 'ชื่อ - นามสกุล': document.getElementById('fullName').value, 'ทะเบียนรถ': document.getElementById('licensePlate').value, 'เบอร์ติดต่อ': document.getElementById('contactNumber').value, 'สาขา': document.getElementById('branch').value };
-
             try {
                 const result = await serverCall('registerEmployee', data);
-                document.getElementById('loading-view').classList.add('hidden');
-                showCustomAlert(`คุณ ${liffProfile.displayName}`, result.message, true);
+                alert(result.message);
+                if (result.status === 'success' || result.status === 'exists') {
+                    window.location.href = './index.html';
+                }
             } catch (error) {
-                document.getElementById('loading-view').classList.add('hidden');
-                document.getElementById('register-form-container').classList.remove('hidden');
-                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
+                alert('เกิดข้อผิดพลาด: ' + error.message);
+                btn.disabled = false;
+                btn.textContent = 'ลงทะเบียน';
             }
         });
-        
         function serverCall(action, ...args) {
             const url = GAS_WEB_APP_URL;
             const payload = { action: action, args: args };
-            return fetch(url, {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // ใช้ slash (/)
-                mode: 'cors'
-            })
-            .then(response => response.json())
-            .then(data => { if (data.status === 'error') { throw new Error(data.message); } return data.response; });
+            return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, mode: 'cors' })
+                .then(response => response.json())
+                .then(data => { if (data.status === 'error') { throw new Error(data.message); } return data.response; });
         }
-
-        let countdownInterval;
-        function showCustomAlert(title, message, isSuccess = false) {
-            const overlay = document.getElementById('custom-alert-overlay');
-            const titleEl = document.getElementById('custom-alert-title');
-            const messageEl = document.getElementById('custom-alert-message');
-            const closeBtn = document.getElementById('custom-alert-close-btn');
-
-            titleEl.textContent = title;
-            messageEl.textContent = message;
-            overlay.classList.remove('hidden');
-            clearInterval(countdownInterval);
-
-            if (isSuccess) {
-                let countdown = 5;
-                closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
-                countdownInterval = setInterval(() => {
-                    countdown--;
-                    if (countdown > 0) {
-                        closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
-                    } else {
-                        clearInterval(countdownInterval);
-                        closeAndExit();
-                    }
-                }, 1000);
-            } else {
-                closeBtn.textContent = 'ตกลง';
-            }
-
-            closeBtn.onclick = () => {
-                clearInterval(countdownInterval);
-                if (isSuccess) {
-                    closeAndExit();
-                } else {
-                    overlay.classList.add('hidden');
-                }
-            };
-        }
-
-        function closeAndExit() {
-            document.getElementById('custom-alert-overlay').classList.add('hidden');
-            window.location.href = './index.html';
-        }
-
     </script>
 </body>
 </html>
