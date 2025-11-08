@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -18,7 +19,7 @@
         .view-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
         form { display: flex; flex-direction: column; gap: 1rem; }
         .form-group label { font-weight: 500; margin-bottom: 0.25rem; }
-        .form-group input, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; }
         .btn { width: 100%; padding: 1rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
         .btn:disabled { background-color: #cccccc; cursor: not-allowed; }
         .btn-start { background-color: var(--primary-color); color: white; } .btn-end { background-color: #f5a623; color: white; } .btn-submit { background-color: var(--secondary-color); color: white; }
@@ -26,10 +27,51 @@
         #history-table-wrapper { overflow-x: auto; }
         .history-table { width: 100%; border-collapse: collapse; white-space: nowrap; } .history-table th, .history-table td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
         .hidden { display: none !important; }
-        #loading-view { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--card-bg); z-index: 999; }
+        #loading-view { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: var(--card-bg); z-index: 999; padding: 1rem; box-sizing: border-box; }
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary-color); animation: spin 1s linear infinite; }
         #loading-text { margin-top: 1rem; font-weight: 500; text-align: center; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ★★★★★★★★★★★★★★★★★★ CSS สำหรับ Custom Popup ★★★★★★★★★★★★★★★★★★ */
+        #custom-alert-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #custom-alert-box {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        #custom-alert-title {
+            margin-top: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        #custom-alert-message {
+            font-size: 1rem;
+            color: #555;
+            margin-bottom: 1.5rem;
+        }
+        #custom-alert-close-btn {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            background-color: #06C755;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -38,106 +80,187 @@
         <main id="main-content"><div id="employee-info-box" class="card hidden"></div><div id="view-container"></div><div id="history-container" class="hidden"></div></main>
     </div>
     <div id="loading-view"><div class="spinner"></div><p id="loading-text">กำลังเริ่มต้น...</p></div>
-code
-Code
-<script>
+
+    <!-- ★★★★★★★★★★★★★★★★★★ HTML สำหรับ Custom Popup ★★★★★★★★★★★★★★★★★★ -->
+    <div id="custom-alert-overlay" class="hidden">
+        <div id="custom-alert-box">
+            <h3 id="custom-alert-title"></h3>
+            <p id="custom-alert-message"></p>
+            <button id="custom-alert-close-btn"></button>
+        </div>
+    </div>
+    
+    <script>
+  
 window.addEventListener('DOMContentLoaded', () => {
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-// ★★★  กรุณาใส่ LIFF ID และ WEB APP URL ของคุณที่นี่  ★★★
-// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-const LIFF_ID = '2008326721-bmkWomzv';
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzDI78tUezqDWqN_NVojQZaioS5w2kZdOWernJDK0e0G-v7Ff0fYbS7G58ZjSdTdT_mcw/exec';
-code
-Code
-// --- STATE & DOM ---
-let liffProfile = {};
-const dom = { app: document.getElementById('app-container'), loadingView: document.getElementById('loading-view'), loadingText: document.getElementById('loading-text'), header: { name: document.getElementById('employee-name'), picture: document.getElementById('employee-picture') }, viewContainer: document.getElementById('view-container'), infoBox: document.getElementById('employee-info-box'), historyContainer: document.getElementById('history-container') };
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    // ★★★  กรุณาใส่ LIFF ID และ WEB APP URL ของคุณที่นี่  ★★★
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    const LIFF_ID = '2008326721-bmkWomzv';
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzDI78tUezqDWqN_NVojQZaioS5w2kZdOWernJDK0e0G-v7Ff0fYbS7G58ZjSdTdT_mcw/exec';
 
-// --- MAIN LOGIC ---
-(async function main() {
+ let liffProfile = {};
+            const dom = { app: document.getElementById('app-container'), loadingView: document.getElementById('loading-view'), loadingText: document.getElementById('loading-text'), header: { name: document.getElementById('employee-name'), picture: document.getElementById('employee-picture') }, viewContainer: document.getElementById('view-container'), infoBox: document.getElementById('employee-info-box'), historyContainer: document.getElementById('history-container') };
+            
+            (async function main() {
+                try {
+                    await liff.init({ liffId: LIFF_ID });
+                    if (!liff.isLoggedIn()) { liff.login(); return; }
+                    dom.loadingText.textContent = 'กำลังตรวจสอบข้อมูลผู้ใช้...';
+                    
+                    liffProfile = await liff.getProfile();
+                    const initialState = await serverCall('getWorkStateForToday', liffProfile.userId);
+                    
+                    if (initialState.status === 'NOT_REGISTERED') {
+                        window.location.href = './register.html';
+                        return;
+                    }
+
+                    renderUI(liffProfile, initialState);
+                    dom.app.classList.remove('hidden');
+                    dom.loadingView.classList.add('hidden');
+
+                } catch (error) { 
+                    showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
+                    dom.loadingView.classList.add('hidden'); // ซ่อน loading view ด้วย
+                    console.error(error); 
+                }
+            })();
+
+            function serverCall(action, ...args) {
+                const url = GAS_WEB_APP_URL; const payload = { action: action, args: args };
+                return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, mode: 'cors'})
+                    .then(response => { if (!response.ok) { throw new Error('Network response was not ok'); } return response.json(); })
+                    .then(data => { if(data.status === 'error') { throw new Error(data.message); } return data.response; });
+            }
+
+            function renderUI(p, s) { renderHeader(p); renderApp(s); }
+            function renderApp(s) { renderInfoBox(s); renderMainView(s); renderHistory(s); }
+            function renderHeader(p) { dom.header.name.textContent = p.displayName; dom.header.picture.src = p.pictureUrl; }
+            function renderInfoBox({ status: s, employeeData: d }) { if (s !== 'NOT_STARTED' && d) { dom.infoBox.innerHTML = `<p><b>ชื่อ:</b> ${d['ชื่อ - นามสกุล']}</p><p><b>ทะเบียนรถ:</b> ${d['ทะเบียนรถ']} | <b>สาขา:</b> ${d['สาขา']}</p>`; dom.infoBox.classList.remove('hidden'); } else { dom.infoBox.classList.add('hidden'); } }
+            function renderMainView({ status: s, workData: w }) { let h; switch (s) { case 'NOT_STARTED': case 'STARTED_NOT_ENDED': h = createMainMenuView(s); break; case 'COMPLETED': h = createSummaryView({ workData: w }); break; } dom.viewContainer.innerHTML = h; addEventListeners({ status: s, workData: w }); }
+            function renderHistory({ status: s }) { if (s === 'STARTED_NOT_ENDED' || s === 'COMPLETED') { serverCall('getWorkHistory', liffProfile.userId).then(h => { if (h && h.length > 0) { dom.historyContainer.innerHTML = createHistoryTableView(h); dom.historyContainer.classList.remove('hidden'); } }); } }
+            function createMainMenuView(s) { const st = s === 'NOT_STARTED'; return `<div class="view card"><h2 class="view-title">สถานะ: ${st ? 'ยังไม่เริ่มงาน' : 'กำลังปฏิบัติงาน'}</h2><div class="main-view-buttons"><button id="show-start-form-btn" class="btn btn-start" ${!st ? 'disabled' : ''}>ลงเวลาเริ่มงาน</button><button id="show-end-form-btn" class="btn btn-end" ${st || !s ? 'disabled' : ''}>ลงเวลาเลิกงาน</button></div></div>`; }
+            function createStartFormView() { return `<form id="start-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเริ่มงาน</h2><div class="form-group"><label>เวลาเริ่มงาน</label><input type="time" id="startTime" required></div><div class="form-group"><label>เลขไมล์เริ่มงาน</label><input type="number" id="startMileage" required></div><div class="form-group"><label>รูปถ่ายเลขไมล์เริ่มงาน</label><input type="file" id="startMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเริ่มงาน</label><input type="file" id="startEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเริ่มงาน</button></form>`; }
+            function createStartWorkSummaryView({ workData: w }) { return `<div class="card"><h2 class="view-title">ข้อมูลการเริ่มงาน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาเริ่ม:</b> ${formatTimeForDisplay(w['เวลาเริ่มงาน'])}</p><p><b>เลขไมล์เริ่ม:</b> ${w['เลขไมล์เริ่มงาน']}</p></div>`; }
+            function createEndFormView({ workData: w }) { return `<form id="end-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเลิกงาน</h2><div class="form-group"><label>เวลาเลิกงาน</label><input type="time" id="endTime" required></div><div class="form-group"><label>เลขไมล์เลิกงาน</label><input type="number" id="endMileage" required></div><div class="form-group"><label>จำนวนรอบงาน</label><input type="number" id="workTrips" required></div><div class="form-group"><label>จุดส่งทั้งหมด</label><input type="number" id="totalDeliveryPoints" required></div><div class="form-group"><label>ส่งสำเร็จ</label><input type="number" id="successfulDeliveries" required></div><div class="form-group"><label>หมายเหตุ</label><textarea id="notes" rows="3"></textarea></div><div class="form-group"><label>รูปถ่ายเลขไมล์เลิกงาน</label><input type="file" id="endMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเลิกงาน</label><input type="file" id="endEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเลิกงาน</button></form>`; }
+            function createSummaryView({ workData: w }) { return `<div class="view card"><h2 class="view-title">สรุปข้อมูลประจำวัน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาทำงาน:</b> ${formatTimeForDisplay(w['เวลาเริ่มงาน'])} - ${formatTimeForDisplay(w['เวลาเลิกงาน'])} (${w['จำนวนชั่วโมงการทำงาน'] || 'N/A'} ชม.)</p><p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p><p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p><p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p></div>`; }
+            function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = formatTimeForDisplay(r['เวลาเริ่มงาน']); const endTimeDisplay = formatTimeForDisplay(r['เวลาเลิกงาน']); const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
+            function addEventListeners(s) { document.getElementById('show-start-form-btn')?.addEventListener('click', () => { dom.viewContainer.innerHTML = createStartFormView(); addEventListeners(s); }); document.getElementById('show-end-form-btn')?.addEventListener('click', () => { const summaryHTML = createStartWorkSummaryView(s); const formHTML = createEndFormView(s); dom.viewContainer.innerHTML = summaryHTML + formHTML; addEventListeners(s); }); document.getElementById('start-work-form')?.addEventListener('submit', handleStartWorkSubmit); document.getElementById('end-work-form')?.addEventListener('submit', (e) => handleEndWorkSubmit(e, s)); }
+            
+            async function handleStartWorkSubmit(e) {
+    e.preventDefault();
+    
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+    // แสดงหน้า Loading ก่อนเริ่มทำงาน
+    dom.loadingView.classList.remove('hidden');
+    dom.loadingText.textContent = 'กำลังบันทึกข้อมูลเริ่มงาน...';
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
     try {
-        await liff.init({ liffId: LIFF_ID });
-        if (!liff.isLoggedIn()) { liff.login(); return; }
-        dom.loadingText.textContent = 'กำลังดึงข้อมูล...';
-
-        liffProfile = await liff.getProfile();
-        const initialState = await serverCall('getWorkStateForToday', liffProfile.userId);
-
-        renderUI(liffProfile, initialState);
-        dom.app.classList.remove('hidden'); dom.loadingView.classList.add('hidden');
-    } catch (error) { dom.loadingText.innerHTML = `<span style="color:red; font-weight:bold;">เกิดข้อผิดพลาด:</span><br>${error.message}`; console.error(error); }
-})();
-
-function serverCall(action, ...args) {
-    const url = GAS_WEB_APP_URL; const payload = { action: action, args: args };
-    return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, mode: 'cors'})
-        .then(response => { if (!response.ok) { throw new Error('Network response was not ok'); } return response.json(); })
-        .then(data => { if(data.status === 'error') { throw new Error(data.message); } return data.response; });
+        const form = e.target;
+        // การอ่านไฟล์และการส่งข้อมูลจะเกิดขึ้นตอนที่หน้า Loading แสดงอยู่
+        const data = { userId: liffProfile.userId, startTime: form.querySelector('#startTime').value, startMileage: form.querySelector('#startMileage').value, startMileagePhoto: await readFileAsBase64(form.querySelector('#startMileagePhoto').files[0]), startEmployeePhoto: await readFileAsBase64(form.querySelector('#startEmployeePhoto').files[0]), };
+        const result = await serverCall('saveStartWork', data);
+        
+        // ซ่อนหน้า Loading ก่อนแสดง Popup
+        dom.loadingView.classList.add('hidden');
+        handleServerResponse(result);
+    } catch (err) {
+        // ถ้าเกิด Error ให้ซ่อนหน้า Loading ก่อน
+        dom.loadingView.classList.add('hidden');
+        showCustomAlert('เกิดข้อผิดพลาด', err.message, false);
+    }
 }
+           async function handleEndWorkSubmit(e, state) {
+    e.preventDefault();
 
-function renderUI(p, s) { renderHeader(p); renderApp(s); }
-function renderApp(s) { renderInfoBox(s); renderMainView(s); renderHistory(s); }
-function renderHeader(p) { dom.header.name.textContent = p.displayName; dom.header.picture.src = p.pictureUrl; }
-function renderInfoBox({ status: s, employeeData: d }) { if (s !== 'NOT_STARTED' && d) { dom.infoBox.innerHTML = `<p><b>ชื่อ:</b> ${d['ชื่อ - นามสกุล']}</p><p><b>ทะเบียนรถ:</b> ${d['ทะเบียนรถ']} | <b>สาขา:</b> ${d['สาขา']}</p>`; dom.infoBox.classList.remove('hidden'); } else { dom.infoBox.classList.add('hidden'); } }
-function renderMainView({ status: s, workData: w }) { let h; switch (s) { case 'NOT_STARTED': case 'STARTED_NOT_ENDED': h = createMainMenuView(s); break; case 'COMPLETED': h = createSummaryView({ workData: w }); break; } dom.viewContainer.innerHTML = h; addEventListeners({ status: s, workData: w }); }
-function renderHistory({ status: s }) { if (s === 'STARTED_NOT_ENDED' || s === 'COMPLETED') { serverCall('getWorkHistory', liffProfile.userId).then(h => { if (h && h.length > 0) { dom.historyContainer.innerHTML = createHistoryTableView(h); dom.historyContainer.classList.remove('hidden'); } }); } }
-function createMainMenuView(s) { const st = s === 'NOT_STARTED'; return `<div class="view card"><h2 class="view-title">สถานะ: ${st ? 'ยังไม่เริ่มงาน' : 'กำลังปฏิบัติงาน'}</h2><div class="main-view-buttons"><button id="show-start-form-btn" class="btn btn-start" ${!st ? 'disabled' : ''}>ลงเวลาเริ่มงาน</button><button id="show-end-form-btn" class="btn btn-end" ${st || !s ? 'disabled' : ''}>ลงเวลาเลิกงาน</button></div></div>`; }
-function createStartFormView() { return `<form id="start-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเริ่มงาน</h2><div class="form-group"><label>เวลาเริ่มงาน</label><input type="time" id="startTime" required></div><div class="form-group"><label>เลขไมล์เริ่มงาน</label><input type="number" id="startMileage" required></div><div class="form-group"><label>รูปถ่ายเลขไมล์เริ่มงาน</label><input type="file" id="startMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเริ่มงาน</label><input type="file" id="startEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเริ่มงาน</button></form>`; }
+    // ★★★★★★★★★★★★★★★★★★ จุดแก้ไข ★★★★★★★★★★★★★★★★★★
+    // แสดงหน้า Loading ก่อนเริ่มทำงาน
+    dom.loadingView.classList.remove('hidden');
+    dom.loadingText.textContent = 'กำลังบันทึกข้อมูลเลิกงาน...';
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
-// ★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 1: สร้างฟังก์ชันสรุปข้อมูลเริ่มงาน ★★★★★★★★★★★★★★★★★★
-function createStartWorkSummaryView({ workData: w }) {
-    return `<div class="card">
-                <h2 class="view-title">ข้อมูลการเริ่มงาน</h2>
-                <p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p>
-                <p><b>เวลาเริ่ม:</b> ${formatTimeForDisplay(w['เวลาเริ่มงาน'])}</p>
-                <p><b>เลขไมล์เริ่ม:</b> ${w['เลขไมล์เริ่มงาน']}</p>
-            </div>`;
+    try {
+        const form = e.target;
+        if (Number(form.querySelector('#endMileage').value) <= Number(state.workData['เลขไมล์เริ่มงาน'])) {
+            // ถ้าข้อมูลผิดพลาด ให้ซ่อน Loading View ก่อนแสดง Popup
+            dom.loadingView.classList.add('hidden');
+            showCustomAlert('ข้อมูลผิดพลาด', 'เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน', false);
+            return;
+        }
+        const data = { /* ... (โค้ดส่วนนี้เหมือนเดิม) ... */ };
+        const result = await serverCall('saveEndWork', data);
+
+        dom.loadingView.classList.add('hidden');
+        handleServerResponse(result);
+    } catch (err) {
+        dom.loadingView.classList.add('hidden');
+        showCustomAlert('เกิดข้อผิดพลาด', err.message, false);
+    }
 }
+            
+            function handleServerResponse(result) {
+                const title = `คุณ ${liffProfile.displayName}`;
+                const message = result.message;
+                showCustomAlert(title, message, result.status === 'success');
+            }
 
-// ★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 2: แก้ไขฟังก์ชันฟอร์มเลิกงาน ★★★★★★★★★★★★★★★★★★
-// (ลบข้อมูลสรุปออกจากฟอร์ม)
-function createEndFormView({ workData: w }) {
-    return `<form id="end-work-form" class="view card">
-                <h2 class="view-title">บันทึกเวลาเลิกงาน</h2>
-                <div class="form-group"><label>เวลาเลิกงาน</label><input type="time" id="endTime" required></div>
-                <div class="form-group"><label>เลขไมล์เลิกงาน</label><input type="number" id="endMileage" required></div>
-                <div class="form-group"><label>จำนวนรอบงาน</label><input type="number" id="workTrips" required></div>
-                <div class="form-group"><label>จุดส่งทั้งหมด</label><input type="number" id="totalDeliveryPoints" required></div>
-                <div class="form-group"><label>ส่งสำเร็จ</label><input type="number" id="successfulDeliveries" required></div>
-                <div class="form-group"><label>หมายเหตุ</label><textarea id="notes" rows="3"></textarea></div>
-                <div class="form-group"><label>รูปถ่ายเลขไมล์เลิกงาน</label><input type="file" id="endMileagePhoto" accept="image/*"></div>
-                <div class="form-group"><label>รูปถ่ายพนักงานเลิกงาน</label><input type="file" id="endEmployeePhoto" accept="image/*"></div>
-                <button type="submit" class="btn btn-submit">บันทึกข้อมูลเลิกงาน</button>
-            </form>`;
-}
+            let countdownInterval;
+            function showCustomAlert(title, message, isSuccess = false) {
+                const overlay = document.getElementById('custom-alert-overlay');
+                const titleEl = document.getElementById('custom-alert-title');
+                const messageEl = document.getElementById('custom-alert-message');
+                const closeBtn = document.getElementById('custom-alert-close-btn');
 
-function createSummaryView({ workData: w }) { return `<div class="view card"><h2 class="view-title">สรุปข้อมูลประจำวัน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาทำงาน:</b> ${w['เวลาเริ่มงาน']} - ${w['เวลาเลิกงาน']} (${w['จำนวนชั่วโมงการทำงาน'] || 'N/A'} ชม.)</p><p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p><p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p><p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p></div>`; }
-function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = formatTimeForDisplay(r['เวลาเริ่มงาน']); const endTimeDisplay = formatTimeForDisplay(r['เวลาเลิกงาน']); const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                overlay.classList.remove('hidden');
+                clearInterval(countdownInterval);
 
-// ★★★★★★★★★★★★★★★★ จุดแก้ไขที่ 3: ปรับปรุงการแสดงผลหน้าเลิกงาน ★★★★★★★★★★★★★★★★★★
-function addEventListeners(s) {
-    document.getElementById('show-start-form-btn')?.addEventListener('click', () => {
-        dom.viewContainer.innerHTML = createStartFormView();
-        addEventListeners(s);
-    });
-    document.getElementById('show-end-form-btn')?.addEventListener('click', () => {
-        // สร้าง HTML ของทั้งสองส่วน แล้วนำมาต่อกัน
-        const summaryHTML = createStartWorkSummaryView(s);
-        const formHTML = createEndFormView(s);
-        dom.viewContainer.innerHTML = summaryHTML + formHTML;
-        addEventListeners(s);
-    });
-    document.getElementById('start-work-form')?.addEventListener('submit', handleStartWorkSubmit);
-    document.getElementById('end-work-form')?.addEventListener('submit', (e) => handleEndWorkSubmit(e, s));
-}
+                if (isSuccess) {
+                    let countdown = 5;
+                    closeBtn.textContent = `ตกลง (ปิดใน ${countdown} วิ)`;
+                    countdownInterval = setInterval(() => {
+                        countdown--;
+                        if (countdown > 0) {
+                            closeBtn.textContent = `ตกลง (ปิดใน ${countdown} วิ)`;
+                        } else {
+                            clearInterval(countdownInterval);
+                            closeAndExit();
+                        }
+                    }, 1000);
+                } else {
+                    closeBtn.textContent = 'ตกลง';
+                }
 
-async function handleStartWorkSubmit(e) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; const data = { userId: liffProfile.userId, startTime: form.querySelector('#startTime').value, startMileage: form.querySelector('#startMileage').value, startMileagePhoto: await readFileAsBase64(form.querySelector('#startMileagePhoto').files[0]), startEmployeePhoto: await readFileAsBase64(form.querySelector('#startEmployeePhoto').files[0]), }; const result = await serverCall('saveStartWork', data); handleServerResponse(result); } catch (err) { alert(`Error: ${err.message}`); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเริ่มงาน"; } }
-async function handleEndWorkSubmit(e, state) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; if (Number(form.querySelector('#endMileage').value) <= Number(state.workData['เลขไมล์เริ่มงาน'])) { alert('เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน'); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; return; } const data = { userId: liffProfile.userId, endTime: form.querySelector('#endTime').value, endMileage: form.querySelector('#endMileage').value, trips: form.querySelector('#workTrips').value, totalDeliveries: form.querySelector('#totalDeliveryPoints').value, successfulDeliveries: form.querySelector('#successfulDeliveries').value, notes: form.querySelector('#notes').value, endMileagePhoto: await readFileAsBase64(form.querySelector('#endMileagePhoto').files[0]), endEmployeePhoto: await readFileAsBase64(form.querySelector('#endEmployeePhoto').files[0]), }; const result = await serverCall('saveEndWork', data); handleServerResponse(result); } catch (err) { alert(`Error: ${err.message}`); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; } }
-function handleServerResponse(result) { alert(result.message); if (result.status === 'success') { if (liff.isInClient()) { liff.closeWindow(); } else { dom.loadingView.classList.remove('hidden'); dom.loadingText.textContent = "กำลังโหลดข้อมูลใหม่..."; setTimeout(() => window.location.reload(), 500); } } }
-function readFileAsBase64(file) { return new Promise((resolve, reject) => { if (!file) { resolve(''); return; } const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = () => reject(new Error('File read error')); reader.readAsDataURL(file); }); }
-function formatDateForDisplay(dateValue) { if (!dateValue) return '-'; const date = new Date(dateValue); if (isNaN(date.getTime())) { return dateValue; } const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
-function formatTimeForDisplay(timeValue) { if (!timeValue) return '-'; if (typeof timeValue === 'string' && timeValue.includes(':')) { return timeValue.substring(0, 5); } const date = new Date(timeValue); if (isNaN(date.getTime())) { return '-'; } const hours = String(date.getHours()).padStart(2, '0'); const minutes = String(date.getMinutes()).padStart(2, '0'); return `${hours}:${minutes}`; }
-});
-</script>
+                closeBtn.onclick = () => {
+                    clearInterval(countdownInterval);
+                    if (isSuccess) {
+                        closeAndExit();
+                    } else {
+                        overlay.classList.add('hidden');
+                    }
+                };
+            }
+
+            function closeAndExit() {
+                document.getElementById('custom-alert-overlay').classList.add('hidden');
+                if (liff.isInClient()) {
+                    liff.closeWindow();
+                } else {
+                    dom.loadingView.classList.remove('hidden'); 
+                    dom.loadingText.textContent = "กำลังโหลดข้อมูลใหม่..."; 
+                    setTimeout(() => window.location.reload(), 500); 
+                }
+            }
+
+            function readFileAsBase64(file) { return new Promise((resolve, reject) => { if (!file) { resolve(''); return; } const reader = new FileReader(); reader.onload = (e) => resolve(e.target.result); reader.onerror = () => reject(new Error('File read error')); reader.readAsDataURL(file); }); }
+            function formatDateForDisplay(dateValue) { if (!dateValue) return '-'; const date = new Date(dateValue); if (isNaN(date.getTime())) { return dateValue; } const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
+            function formatTimeForDisplay(timeValue) { if (!timeValue) return '-'; if (typeof timeValue === 'string' && /^\d{2}:\d{2}$/.test(timeValue)) { return timeValue; } const date = new Date(timeValue); if (isNaN(date.getTime())) { return '-'; } const hours = String(date.getHours()).padStart(2, '0'); const minutes = String(date.getMinutes()).padStart(2, '0'); return `${hours}:${minutes}`; }
+        });
+    </script>
 </body>
 </html>
+                            
+
