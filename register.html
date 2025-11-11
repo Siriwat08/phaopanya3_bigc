@@ -78,17 +78,18 @@
         main();
 
         function populateBranchDropdown(branches) {
-            const selectElement = document.getElementById('branch');
-            if (branches && branches.length > 0) {
-                branches.forEach(branchName => {
-                    const option = document.createElement('option');
-                    option.value = branchName;
-                    option.textContent = branchName;
-                    selectElement.appendChild(option);
-                });
-            }
-        }
-
+    const selectElement = document.getElementById('branch');
+    if (branches && branches.length > 0) {
+        branches.forEach(branchObj => {
+            const option = document.createElement('option');
+            // ค่าของ option คือชื่อสาขา
+            option.value = branchObj.BranchName;
+            // ข้อความที่แสดงก็คือชื่อสาขา
+            option.textContent = branchObj.BranchName;
+            selectElement.appendChild(option);
+        });
+    }
+}
         document.getElementById('register-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             document.getElementById('register-form-container').classList.add('hidden');
