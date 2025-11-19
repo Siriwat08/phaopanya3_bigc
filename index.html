@@ -46,20 +46,25 @@
             padding: 2rem;
             border-radius: 12px;
             text-align: center;
-            width: 80%;
-            max-width: 400px;
+            width: 85%;
+            max-width: 450px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
         #custom-alert-title {
             margin-top: 0;
             font-size: 1.25rem;
             font-weight: 700;
+            color: #333;
         }
         #custom-alert-message {
             font-size: 1rem;
             color: #555;
             margin-bottom: 1.5rem;
+            white-space: pre-wrap;
+            line-height: 1.5;
         }
+        
+        /* ปุ่มสำหรับ Simple Alert */
         #custom-alert-close-btn {
             width: 100%;
             padding: 0.75rem;
@@ -70,6 +75,37 @@
             cursor: pointer;
             background-color: #06C755;
             color: white;
+        }
+        
+        /* ปุ่มสำหรับ Confirmation Dialog */
+        .confirmation-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .btn-confirm, .btn-cancel {
+            flex: 1;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-confirm {
+            background-color: #06C755;
+            color: white;
+        }
+        .btn-confirm:hover {
+            background-color: #05b34a;
+        }
+        .btn-cancel {
+            background-color: #f44336;
+            color: white;
+        }
+        .btn-cancel:hover {
+            background-color: #d32f2f;
         }
     </style>
 </head>
@@ -85,7 +121,13 @@
         <div id="custom-alert-box">
             <h3 id="custom-alert-title"></h3>
             <p id="custom-alert-message"></p>
-            <button id="custom-alert-close-btn"></button>
+            <!-- ปุ่มสำหรับ Simple Alert -->
+            <button id="custom-alert-close-btn" class="hidden"></button>
+            <!-- ปุ่มสำหรับ Confirmation Dialog -->
+            <div id="confirmation-buttons" class="confirmation-buttons hidden">
+                <button id="confirmation-yes-btn" class="btn-confirm">ยืนยัน</button>
+                <button id="confirmation-no-btn" class="btn-cancel">ยกเลิก</button>
+            </div>
         </div>
     </div>
     
@@ -95,7 +137,17 @@
             const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzDI78tUezqDWqN_NVojQZaioS5w2kZdOWernJDK0e0G-v7Ff0fYbS7G58ZjSdTdT_mcw/exec';
             
             let liffProfile = {};
-            const dom = { app: document.getElementById('app-container'), loadingView: document.getElementById('loading-view'), loadingText: document.getElementById('loading-text'), header: { name: document.getElementById('employee-name'), picture: document.getElementById('employee-picture') }, viewContainer: document.getElementById('view-container'), infoBox: document.getElementById('employee-info-box'), historyContainer: document.getElementById('history-container') };
+            let countdownInterval;
+            
+            const dom = { 
+                app: document.getElementById('app-container'), 
+                loadingView: document.getElementById('loading-view'), 
+                loadingText: document.getElementById('loading-text'), 
+                header: { name: document.getElementById('employee-name'), picture: document.getElementById('employee-picture') }, 
+                viewContainer: document.getElementById('view-container'), 
+                infoBox: document.getElementById('employee-info-box'), 
+                historyContainer: document.getElementById('history-container') 
+            };
             
             (async function main() {
                 try {
@@ -117,7 +169,7 @@
 
                 } catch (error) { 
                     showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
-                    dom.loadingView.classList.add('hidden'); // ซ่อน loading view ด้วย
+                    dom.loadingView.classList.add('hidden'); 
                     console.error(error); 
                 }
             })();
@@ -141,10 +193,134 @@
             function createEndFormView({ workData: w }) { return `<form id="end-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเลิกงาน</h2><div class="form-group"><label>เวลาเลิกงาน</label><input type="time" id="endTime" required></div><div class="form-group"><label>เลขไมล์เลิกงาน</label><input type="number" id="endMileage" required></div><div class="form-group"><label>จำนวนรอบงาน</label><input type="number" id="workTrips" required></div><div class="form-group"><label>จุดส่งทั้งหมด</label><input type="number" id="totalDeliveryPoints" required></div><div class="form-group"><label>ส่งสำเร็จ</label><input type="number" id="successfulDeliveries" required></div><div class="form-group"><label>หมายเหตุ</label><textarea id="notes" rows="3"></textarea></div><div class="form-group"><label>รูปถ่ายเลขไมล์เลิกงาน</label><input type="file" id="endMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเลิกงาน</label><input type="file" id="endEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเลิกงาน</button></form>`; }
             function createSummaryView({ workData: w }) { return `<div class="view card"><h2 class="view-title">สรุปข้อมูลประจำวัน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาทำงาน:</b> ${formatTimeForDisplay(w['เวลาเริ่มงาน'])} - ${formatTimeForDisplay(w['เวลาเลิกงาน'])} (${w['จำนวนชั่วโมงการทำงาน'] || 'N/A'} ชม.)</p><p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p><p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p><p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p></div>`; }
             function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = formatTimeForDisplay(r['เวลาเริ่มงาน']); const endTimeDisplay = formatTimeForDisplay(r['เวลาเลิกงาน']); const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
-            function addEventListeners(s) { document.getElementById('show-start-form-btn')?.addEventListener('click', () => { dom.viewContainer.innerHTML = createStartFormView(); addEventListeners(s); }); document.getElementById('show-end-form-btn')?.addEventListener('click', () => { const summaryHTML = createStartWorkSummaryView(s); const formHTML = createEndFormView(s); dom.viewContainer.innerHTML = summaryHTML + formHTML; addEventListeners(s); }); document.getElementById('start-work-form')?.addEventListener('submit', handleStartWorkSubmit); document.getElementById('end-work-form')?.addEventListener('submit', (e) => handleEndWorkSubmit(e, s)); }
             
-            async function handleStartWorkSubmit(e) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; const data = { userId: liffProfile.userId, startTime: form.querySelector('#startTime').value, startMileage: form.querySelector('#startMileage').value, startMileagePhoto: await readFileAsBase64(form.querySelector('#startMileagePhoto').files[0]), startEmployeePhoto: await readFileAsBase64(form.querySelector('#startEmployeePhoto').files[0]), }; const result = await serverCall('saveStartWork', data); handleServerResponse(result); } catch (err) { showCustomAlert('เกิดข้อผิดพลาด', err.message, false); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเริ่มงาน"; } }
-            async function handleEndWorkSubmit(e, state) { e.preventDefault(); const btn = e.target.querySelector('.btn-submit'); btn.disabled = true; btn.textContent = "กำลังบันทึก..."; try { const form = e.target; if (Number(form.querySelector('#endMileage').value) <= Number(state.workData['เลขไมล์เริ่มงาน'])) { showCustomAlert('ข้อมูลผิดพลาด', 'เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน', false); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; return; } const data = { userId: liffProfile.userId, endTime: form.querySelector('#endTime').value, endMileage: form.querySelector('#endMileage').value, trips: form.querySelector('#workTrips').value, totalDeliveries: form.querySelector('#totalDeliveryPoints').value, successfulDeliveries: form.querySelector('#successfulDeliveries').value, notes: form.querySelector('#notes').value, endMileagePhoto: await readFileAsBase64(form.querySelector('#endMileagePhoto').files[0]), endEmployeePhoto: await readFileAsBase64(form.querySelector('#endEmployeePhoto').files[0]), }; const result = await serverCall('saveEndWork', data); handleServerResponse(result); } catch (err) { showCustomAlert('เกิดข้อผิดพลาด', err.message, false); btn.disabled = false; btn.textContent = "บันทึกข้อมูลเลิกงาน"; } }
+            function addEventListeners(s) { 
+                document.getElementById('show-start-form-btn')?.addEventListener('click', () => { 
+                    dom.viewContainer.innerHTML = createStartFormView(); 
+                    addEventListeners(s); 
+                }); 
+                document.getElementById('show-end-form-btn')?.addEventListener('click', () => { 
+                    const summaryHTML = createStartWorkSummaryView(s); 
+                    const formHTML = createEndFormView(s); 
+                    dom.viewContainer.innerHTML = summaryHTML + formHTML; 
+                    addEventListeners(s); 
+                }); 
+                
+                // ★★★★★★★★★★★★★★★★★★ Event Listeners ที่มีการยืนยัน ★★★★★★★★★★★★★★★★★★
+                document.getElementById('start-work-form')?.addEventListener('submit', handleStartWorkSubmit); 
+                document.getElementById('end-work-form')?.addEventListener('submit', (e) => handleEndWorkSubmit(e, s)); 
+            }
+            
+            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน handleStartWorkSubmit ที่มีการยืนยัน ★★★★★★★★★★★★★★★★★★
+            async function handleStartWorkSubmit(e) { 
+                e.preventDefault(); 
+                const form = e.target;
+                const startTime = form.querySelector('#startTime').value;
+                const startMileage = form.querySelector('#startMileage').value;
+                const startMileagePhoto = form.querySelector('#startMileagePhoto').files[0];
+                const startEmployeePhoto = form.querySelector('#startEmployeePhoto').files[0];
+
+                // สร้างข้อความสรุปข้อมูล
+                const summaryMessage = `กรุณาตรวจสอบข้อมูลก่อนบันทึก:\n\n` +
+                    `เวลาเริ่มงาน: ${startTime}\n` +
+                    `เลขไมล์เริ่มงาน: ${startMileage}\n` +
+                    `รูปถ่ายเลขไมล์: ${startMileagePhoto ? startMileagePhoto.name : 'ไม่ได้เลือก'}\n` +
+                    `รูปถ่ายพนักงาน: ${startEmployeePhoto ? startEmployeePhoto.name : 'ไม่ได้เลือก'}\n\n` +
+                    `คุณต้องการบันทึกข้อมูลนี้หรือไม่?`;
+
+                showConfirmationPopup(
+                    'ยืนยันการบันทึกเวลาเริ่มงาน',
+                    summaryMessage,
+                    async () => {
+                        // ถ้าผู้ใช้กด "ยืนยัน"
+                        const btn = form.querySelector('.btn-submit'); 
+                        btn.disabled = true; 
+                        btn.textContent = "กำลังบันทึก..."; 
+                        try { 
+                            const data = { 
+                                userId: liffProfile.userId, 
+                                startTime: startTime, 
+                                startMileage: startMileage, 
+                                startMileagePhoto: await readFileAsBase64(startMileagePhoto), 
+                                startEmployeePhoto: await readFileAsBase64(startEmployeePhoto), 
+                            }; 
+                            const result = await serverCall('saveStartWork', data); 
+                            handleServerResponse(result); 
+                        } catch (err) { 
+                            showCustomAlert('เกิดข้อผิดพลาด', err.message, false); 
+                            btn.disabled = false; 
+                            btn.textContent = "บันทึกข้อมูลเริ่มงาน"; 
+                        }
+                    },
+                    () => {
+                        // ถ้าผู้ใช้กด "ยกเลิก" - ไม่ทำอะไร
+                    }
+                );
+            }
+
+            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน handleEndWorkSubmit ที่มีการยืนยัน ★★★★★★★★★★★★★★★★★★
+            async function handleEndWorkSubmit(e, state) { 
+                e.preventDefault(); 
+                const form = e.target;
+                const endTime = form.querySelector('#endTime').value;
+                const endMileage = form.querySelector('#endMileage').value;
+                const workTrips = form.querySelector('#workTrips').value;
+                const totalDeliveryPoints = form.querySelector('#totalDeliveryPoints').value;
+                const successfulDeliveries = form.querySelector('#successfulDeliveries').value;
+                const notes = form.querySelector('#notes').value;
+                const endMileagePhoto = form.querySelector('#endMileagePhoto').files[0];
+                const endEmployeePhoto = form.querySelector('#endEmployeePhoto').files[0];
+
+                if (Number(endMileage) <= Number(state.workData['เลขไมล์เริ่มงาน'])) { 
+                    showCustomAlert('ข้อมูลผิดพลาด', 'เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน', false); 
+                    return; 
+                }
+
+                // สร้างข้อความสรุปข้อมูล
+                const summaryMessage = `กรุณาตรวจสอบข้อมูลก่อนบันทึก:\n\n` +
+                    `เวลาเลิกงาน: ${endTime}\n` +
+                    `เลขไมล์เลิกงาน: ${endMileage}\n` +
+                    `จำนวนรอบงาน: ${workTrips}\n` +
+                    `จุดส่งทั้งหมด: ${totalDeliveryPoints}\n` +
+                    `ส่งสำเร็จ: ${successfulDeliveries}\n` +
+                    `หมายเหตุ: ${notes || 'ไม่มี'}\n` +
+                    `รูปถ่ายเลขไมล์: ${endMileagePhoto ? endMileagePhoto.name : 'ไม่ได้เลือก'}\n` +
+                    `รูปถ่ายพนักงาน: ${endEmployeePhoto ? endEmployeePhoto.name : 'ไม่ได้เลือก'}\n\n` +
+                    `คุณต้องการบันทึกข้อมูลนี้หรือไม่?`;
+
+                showConfirmationPopup(
+                    'ยืนยันการบันทึกเวลาเลิกงาน',
+                    summaryMessage,
+                    async () => {
+                        // ถ้าผู้ใช้กด "ยืนยัน"
+                        const btn = form.querySelector('.btn-submit'); 
+                        btn.disabled = true; 
+                        btn.textContent = "กำลังบันทึก..."; 
+                        try { 
+                            const data = { 
+                                userId: liffProfile.userId, 
+                                endTime: endTime, 
+                                endMileage: endMileage, 
+                                trips: workTrips, 
+                                totalDeliveries: totalDeliveryPoints, 
+                                successfulDeliveries: successfulDeliveries, 
+                                notes: notes, 
+                                endMileagePhoto: await readFileAsBase64(endMileagePhoto), 
+                                endEmployeePhoto: await readFileAsBase64(endEmployeePhoto), 
+                            }; 
+                            const result = await serverCall('saveEndWork', data); 
+                            handleServerResponse(result); 
+                        } catch (err) { 
+                            showCustomAlert('เกิดข้อผิดพลาด', err.message, false); 
+                            btn.disabled = false; 
+                            btn.textContent = "บันทึกข้อมูลเลิกงาน"; 
+                        }
+                    },
+                    () => {
+                        // ถ้าผู้ใช้กด "ยกเลิก" - ไม่ทำอะไร
+                    }
+                );
+            }
             
             function handleServerResponse(result) {
                 const title = `คุณ ${liffProfile.displayName}`;
@@ -152,17 +328,56 @@
                 showCustomAlert(title, message, result.status === 'success');
             }
 
-            let countdownInterval;
-            function showCustomAlert(title, message, isSuccess = false) {
+            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน showConfirmationPopup ใหม่ ★★★★★★★★★★★★★★★★★★
+            function showConfirmationPopup(title, message, onConfirm, onCancel) {
                 const overlay = document.getElementById('custom-alert-overlay');
                 const titleEl = document.getElementById('custom-alert-title');
                 const messageEl = document.getElementById('custom-alert-message');
                 const closeBtn = document.getElementById('custom-alert-close-btn');
+                const confirmationButtons = document.getElementById('confirmation-buttons');
+                const yesBtn = document.getElementById('confirmation-yes-btn');
+                const noBtn = document.getElementById('confirmation-no-btn');
 
                 titleEl.textContent = title;
                 messageEl.textContent = message;
                 overlay.classList.remove('hidden');
                 clearInterval(countdownInterval);
+
+                // แสดงปุ่มยืนยัน/ยกเลิก และซ่อนปุ่มปิด
+                closeBtn.classList.add('hidden');
+                confirmationButtons.classList.remove('hidden');
+
+                // ลบ event listeners เก่า
+                yesBtn.onclick = null;
+                noBtn.onclick = null;
+
+                yesBtn.onclick = () => {
+                    overlay.classList.add('hidden');
+                    if (onConfirm) onConfirm();
+                };
+
+                noBtn.onclick = () => {
+                    overlay.classList.add('hidden');
+                    if (onCancel) onCancel();
+                };
+            }
+
+            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน showCustomAlert ที่ปรับปรุงแล้ว ★★★★★★★★★★★★★★★★★★
+            function showCustomAlert(title, message, isSuccess = false) {
+                const overlay = document.getElementById('custom-alert-overlay');
+                const titleEl = document.getElementById('custom-alert-title');
+                const messageEl = document.getElementById('custom-alert-message');
+                const closeBtn = document.getElementById('custom-alert-close-btn');
+                const confirmationButtons = document.getElementById('confirmation-buttons');
+
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                overlay.classList.remove('hidden');
+                clearInterval(countdownInterval);
+
+                // แสดงปุ่มปิด และซ่อนปุ่มยืนยัน/ยกเลิก
+                closeBtn.classList.remove('hidden');
+                confirmationButtons.classList.add('hidden');
 
                 if (isSuccess) {
                     let countdown = 5;
