@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary-color: #06C755; --secondary-color: #4A90E2; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #333333; --border-color: #e0e0e0; }
-        body { font-family: 'Kanit', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; }
+        :root { --primary-color: #06C755; --secondary-color: #4A90E2; --bg-color: #f0f2f5; --card-bg: #ffffff; --text-color: #333333; --border-color: #e0e0e0; --error-color: #ff6b6b; --success-color: #51cf66; }
+        body { font-family: 'Kanit', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; padding-bottom: 280px; }
         #app-header { background-color: var(--primary-color); color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
         #employee-picture { width: 50px; height: 50px; border-radius: 50%; border: 2px solid white; }
         #main-content { padding: 1rem; }
@@ -18,7 +18,27 @@
         .view-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); }
         form { display: flex; flex-direction: column; gap: 1rem; }
         .form-group label { font-weight: 500; margin-bottom: 0.25rem; }
-        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; transition: border-color 0.2s; }
+        
+        /* Enhanced Input Validation Styles */
+        .form-group input:invalid, .form-group textarea:invalid, .form-group select:invalid {
+            border-color: var(--error-color);
+            box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+        }
+        .form-group input:valid, .form-group textarea:valid, .form-group select:valid {
+            border-color: var(--success-color);
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(6, 199, 85, 0.2);
+        }
+        .required-field::after {
+            content: " *";
+            color: var(--error-color);
+            font-weight: bold;
+        }
+        
         .btn { width: 100%; padding: 1rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; transition: background-color 0.2s; }
         .btn:disabled { background-color: #cccccc; cursor: not-allowed; }
         .btn-start { background-color: var(--primary-color); color: white; } .btn-end { background-color: #f5a623; color: white; } .btn-submit { background-color: var(--secondary-color); color: white; }
@@ -31,7 +51,7 @@
         #loading-text { margin-top: 1rem; font-weight: 500; text-align: center; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ★★★★★★★★★★★★★★★★★★ CSS สำหรับ Custom Popup ★★★★★★★★★★★★★★★★★★ */
+        /* CSS สำหรับ Custom Popup */
         #custom-alert-overlay {
             position: fixed;
             inset: 0;
@@ -64,7 +84,6 @@
             line-height: 1.5;
         }
         
-        /* ปุ่มสำหรับ Simple Alert */
         #custom-alert-close-btn {
             width: 100%;
             padding: 0.75rem;
@@ -77,7 +96,6 @@
             color: white;
         }
         
-        /* ปุ่มสำหรับ Confirmation Dialog */
         .confirmation-buttons {
             display: flex;
             gap: 1rem;
@@ -107,28 +125,153 @@
         .btn-cancel:hover {
             background-color: #d32f2f;
         }
+
+        /* Debug Console Styles */
+        #debug-console {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 250px;
+            background-color: #1e1e1e;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 1001;
+            border-top: 2px solid #444;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #debug-header {
+            background-color: #333;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #555;
+        }
+        
+        #debug-title {
+            color: #06C755;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        #debug-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .debug-btn {
+            background-color: #444;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .debug-btn:hover {
+            background-color: #555;
+        }
+        
+        #debug-output {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+            line-height: 1.4;
+        }
+        
+        .debug-entry {
+            margin-bottom: 4px;
+            word-wrap: break-word;
+        }
+        
+        .debug-timestamp {
+            color: #888;
+            margin-right: 8px;
+        }
+        
+        .debug-level {
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .debug-info .debug-level { color: #87CEEB; }
+        .debug-success .debug-level { color: #90EE90; }
+        .debug-warn .debug-level { color: #FFD700; }
+        .debug-error .debug-level { color: #FF6B6B; }
+        
+        .debug-message {
+            color: #ffffff;
+        }
+        
+        /* Toggle button for debug console */
+        #debug-toggle {
+            position: fixed;
+            bottom: 260px;
+            right: 10px;
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 1002;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        #debug-toggle:hover {
+            background-color: #555;
+        }
+        
+        .debug-console-hidden #debug-console {
+            display: none;
+        }
+        
+        .debug-console-hidden #debug-toggle {
+            bottom: 10px;
+        }
+        
+        .debug-console-hidden body {
+            padding-bottom: 0;
+        }
     </style>
 </head>
-<body>
+<body class="debug-console-hidden">
     <div id="app-container" class="hidden">
         <header id="app-header"><div id="header-text"><h1 style="font-size: 1.5rem; font-weight: 700;">บันทึกเวลาทำงาน</h1><p id="employee-name" style="font-size: 0.875rem;"></p></div><img id="employee-picture" src=""></header>
         <main id="main-content"><div id="employee-info-box" class="card hidden"></div><div id="view-container"></div><div id="history-container" class="hidden"></div></main>
     </div>
     <div id="loading-view"><div class="spinner"></div><p id="loading-text">กำลังเริ่มต้น...</p></div>
 
-    <!-- ★★★★★★★★★★★★★★★★★★ HTML สำหรับ Custom Popup ★★★★★★★★★★★★★★★★★★ -->
+    <!-- Custom Popup -->
     <div id="custom-alert-overlay" class="hidden">
         <div id="custom-alert-box">
             <h3 id="custom-alert-title"></h3>
             <p id="custom-alert-message"></p>
-            <!-- ปุ่มสำหรับ Simple Alert -->
             <button id="custom-alert-close-btn" class="hidden"></button>
-            <!-- ปุ่มสำหรับ Confirmation Dialog -->
             <div id="confirmation-buttons" class="confirmation-buttons hidden">
                 <button id="confirmation-yes-btn" class="btn-confirm">ยืนยัน</button>
                 <button id="confirmation-no-btn" class="btn-cancel">ยกเลิก</button>
             </div>
         </div>
+    </div>
+
+    <!-- Debug Console -->
+    <button id="debug-toggle">🐛 Debug</button>
+    <div id="debug-console">
+        <div id="debug-header">
+            <h4 id="debug-title">Debug Console</h4>
+            <div id="debug-controls">
+                <button class="debug-btn" onclick="debugClear()">Clear</button>
+                <button class="debug-btn" onclick="debugToggleConsole()">Hide</button>
+            </div>
+        </div>
+        <div id="debug-output"></div>
     </div>
     
     <script>
@@ -148,17 +291,63 @@
                 infoBox: document.getElementById('employee-info-box'), 
                 historyContainer: document.getElementById('history-container') 
             };
+
+            // Debug Console Functions
+            function debugLog(message, level = 'info') {
+                const output = document.getElementById('debug-output');
+                if (!output) return;
+
+                const timestamp = new Date().toLocaleTimeString('th-TH');
+                const entry = document.createElement('div');
+                entry.className = `debug-entry debug-${level}`;
+                entry.innerHTML = `<span class="debug-timestamp">[${timestamp}]</span><span class="debug-level">${level.toUpperCase()}:</span><span class="debug-message">${message}</span>`;
+                
+                output.appendChild(entry);
+                output.scrollTop = output.scrollHeight;
+
+                // Keep only last 100 entries
+                while (output.children.length > 100) {
+                    output.removeChild(output.firstChild);
+                }
+            }
+
+            window.debugClear = function() {
+                const output = document.getElementById('debug-output');
+                if (output) output.innerHTML = '';
+            };
+
+            window.debugToggleConsole = function() {
+                document.body.classList.toggle('debug-console-hidden');
+            };
+
+            // Debug toggle button
+            document.getElementById('debug-toggle').addEventListener('click', () => {
+                document.body.classList.toggle('debug-console-hidden');
+            });
             
             (async function main() {
+                debugLog('Starting LIFF application...', 'info');
                 try {
                     await liff.init({ liffId: LIFF_ID });
-                    if (!liff.isLoggedIn()) { liff.login(); return; }
+                    debugLog('LIFF Init successful', 'success');
+
+                    if (!liff.isLoggedIn()) { 
+                        debugLog('User not logged in, redirecting to LIFF login.', 'warn');
+                        liff.login(); 
+                        return; 
+                    }
                     dom.loadingText.textContent = 'กำลังตรวจสอบข้อมูลผู้ใช้...';
+                    debugLog('Fetching LIFF profile...', 'info');
                     
                     liffProfile = await liff.getProfile();
+                    debugLog(`Fetched LIFF profile: ${liffProfile.displayName} (${liffProfile.userId})`, 'success');
+
+                    debugLog('Calling server for work state...', 'info');
                     const initialState = await serverCall('getWorkStateForToday', liffProfile.userId);
+                    debugLog(`Initial state: ${JSON.stringify(initialState)}`, 'info');
                     
                     if (initialState.status === 'NOT_REGISTERED') {
+                        debugLog('User not registered, redirecting to registration page.', 'warn');
                         window.location.href = './register.html';
                         return;
                     }
@@ -166,8 +355,10 @@
                     renderUI(liffProfile, initialState);
                     dom.app.classList.remove('hidden');
                     dom.loadingView.classList.add('hidden');
+                    debugLog('Application loaded successfully.', 'success');
 
                 } catch (error) { 
+                    debugLog('Error in main function: ' + error.message, 'error');
                     showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
                     dom.loadingView.classList.add('hidden'); 
                     console.error(error); 
@@ -175,10 +366,29 @@
             })();
 
             function serverCall(action, ...args) {
-                const url = GAS_WEB_APP_URL; const payload = { action: action, args: args };
+                const url = GAS_WEB_APP_URL; 
+                const payload = { action: action, args: args };
+                debugLog(`Server call: ${action} with args: ${JSON.stringify(args)}`, 'info');
+                
                 return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, mode: 'cors'})
-                    .then(response => { if (!response.ok) { throw new Error('Network response was not ok'); } return response.json(); })
-                    .then(data => { if(data.status === 'error') { throw new Error(data.message); } return data.response; });
+                    .then(response => { 
+                        if (!response.ok) { 
+                            debugLog(`Network response not OK: ${response.status} ${response.statusText}`, 'error');
+                            throw new Error('Network response was not ok'); 
+                        } 
+                        return response.json(); 
+                    })
+                    .then(data => { 
+                        debugLog(`Server response for ${action}: ${JSON.stringify(data)}`, data.status === 'error' ? 'error' : 'success');
+                        if(data.status === 'error') { 
+                            throw new Error(data.message); 
+                        } 
+                        return data.response; 
+                    })
+                    .catch(error => {
+                        debugLog(`Server call ERROR for ${action}: ${error.message}`, 'error');
+                        throw error;
+                    });
             }
 
             function renderUI(p, s) { renderHeader(p); renderApp(s); }
@@ -188,39 +398,153 @@
             function renderMainView({ status: s, workData: w }) { let h; switch (s) { case 'NOT_STARTED': case 'STARTED_NOT_ENDED': h = createMainMenuView(s); break; case 'COMPLETED': h = createSummaryView({ workData: w }); break; } dom.viewContainer.innerHTML = h; addEventListeners({ status: s, workData: w }); }
             function renderHistory({ status: s }) { if (s === 'STARTED_NOT_ENDED' || s === 'COMPLETED') { serverCall('getWorkHistory', liffProfile.userId).then(h => { if (h && h.length > 0) { dom.historyContainer.innerHTML = createHistoryTableView(h); dom.historyContainer.classList.remove('hidden'); } }); } }
             function createMainMenuView(s) { const st = s === 'NOT_STARTED'; return `<div class="view card"><h2 class="view-title">สถานะ: ${st ? 'ยังไม่เริ่มงาน' : 'กำลังปฏิบัติงาน'}</h2><div class="main-view-buttons"><button id="show-start-form-btn" class="btn btn-start" ${!st ? 'disabled' : ''}>ลงเวลาเริ่มงาน</button><button id="show-end-form-btn" class="btn btn-end" ${st || !s ? 'disabled' : ''}>ลงเวลาเลิกงาน</button></div></div>`; }
-            function createStartFormView() { return `<form id="start-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเริ่มงาน</h2><div class="form-group"><label>เวลาเริ่มงาน</label><input type="time" id="startTime" required></div><div class="form-group"><label>เลขไมล์เริ่มงาน</label><input type="number" id="startMileage" required></div><div class="form-group"><label>รูปถ่ายเลขไมล์เริ่มงาน</label><input type="file" id="startMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเริ่มงาน</label><input type="file" id="startEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเริ่มงาน</button></form>`; }
+            function createStartFormView() { return `<form id="start-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเริ่มงาน</h2><div class="form-group"><label class="required-field">เวลาเริ่มงาน</label><input type="time" id="startTime" required></div><div class="form-group"><label class="required-field">เลขไมล์เริ่มงาน</label><input type="number" id="startMileage" required min="0" step="1"></div><div class="form-group"><label class="required-field">รูปถ่ายเลขไมล์เริ่มงาน</label><input type="file" id="startMileagePhoto" accept="image/*" required></div><div class="form-group"><label class="required-field">รูปถ่ายพนักงานเริ่มงาน</label><input type="file" id="startEmployeePhoto" accept="image/*" required></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเริ่มงาน</button></form>`; }
             function createStartWorkSummaryView({ workData: w }) { return `<div class="card"><h2 class="view-title">ข้อมูลการเริ่มงาน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาเริ่ม:</b> ${formatTimeForDisplay(w['เวลาเริ่มงาน'])}</p><p><b>เลขไมล์เริ่ม:</b> ${w['เลขไมล์เริ่มงาน']}</p></div>`; }
-            function createEndFormView({ workData: w }) { return `<form id="end-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเลิกงาน</h2><div class="form-group"><label>เวลาเลิกงาน</label><input type="time" id="endTime" required></div><div class="form-group"><label>เลขไมล์เลิกงาน</label><input type="number" id="endMileage" required></div><div class="form-group"><label>จำนวนรอบงาน</label><input type="number" id="workTrips" required></div><div class="form-group"><label>จุดส่งทั้งหมด</label><input type="number" id="totalDeliveryPoints" required></div><div class="form-group"><label>ส่งสำเร็จ</label><input type="number" id="successfulDeliveries" required></div><div class="form-group"><label>หมายเหตุ</label><textarea id="notes" rows="3"></textarea></div><div class="form-group"><label>รูปถ่ายเลขไมล์เลิกงาน</label><input type="file" id="endMileagePhoto" accept="image/*"></div><div class="form-group"><label>รูปถ่ายพนักงานเลิกงาน</label><input type="file" id="endEmployeePhoto" accept="image/*"></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเลิกงาน</button></form>`; }
+            function createEndFormView({ workData: w }) { return `<form id="end-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเลิกงาน</h2><div class="form-group"><label class="required-field">เวลาเลิกงาน</label><input type="time" id="endTime" required></div><div class="form-group"><label class="required-field">เลขไมล์เลิกงาน</label><input type="number" id="endMileage" required min="${Number(w['เลขไมล์เริ่มงาน']) + 1}" step="1"></div><div class="form-group"><label class="required-field">จำนวนรอบงาน</label><input type="number" id="workTrips" required min="0" step="1"></div><div class="form-group"><label class="required-field">จุดส่งทั้งหมด</label><input type="number" id="totalDeliveryPoints" required min="0" step="1"></div><div class="form-group"><label class="required-field">ส่งสำเร็จ</label><input type="number" id="successfulDeliveries" required min="0" step="1"></div><div class="form-group"><label>หมายเหตุ</label><textarea id="notes" rows="3" placeholder="ระบุหมายเหตุ (ถ้ามี)"></textarea></div><div class="form-group"><label class="required-field">รูปถ่ายเลขไมล์เลิกงาน</label><input type="file" id="endMileagePhoto" accept="image/*" required></div><div class="form-group"><label class="required-field">รูปถ่ายพนักงานเลิกงาน</label><input type="file" id="endEmployeePhoto" accept="image/*" required></div><button type="submit" class="btn btn-submit">บันทึกข้อมูลเลิกงาน</button></form>`; }
             function createSummaryView({ workData: w }) { return `<div class="view card"><h2 class="view-title">สรุปข้อมูลประจำวัน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาทำงาน:</b> ${formatTimeForDisplay(w['เวลาเริ่มงาน'])} - ${formatTimeForDisplay(w['เวลาเลิกงาน'])} (${w['จำนวนชั่วโมงการทำงาน'] || 'N/A'} ชม.)</p><p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p><p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p><p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p></div>`; }
             function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = formatTimeForDisplay(r['เวลาเริ่มงาน']); const endTimeDisplay = formatTimeForDisplay(r['เวลาเลิกงาน']); const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
             
             function addEventListeners(s) { 
                 document.getElementById('show-start-form-btn')?.addEventListener('click', () => { 
+                    debugLog('Show start form clicked', 'info');
                     dom.viewContainer.innerHTML = createStartFormView(); 
                     addEventListeners(s); 
                 }); 
                 document.getElementById('show-end-form-btn')?.addEventListener('click', () => { 
+                    debugLog('Show end form clicked', 'info');
                     const summaryHTML = createStartWorkSummaryView(s); 
                     const formHTML = createEndFormView(s); 
                     dom.viewContainer.innerHTML = summaryHTML + formHTML; 
                     addEventListeners(s); 
+                    setupRealTimeValidation(s);
                 }); 
                 
-                // ★★★★★★★★★★★★★★★★★★ Event Listeners ที่มีการยืนยัน ★★★★★★★★★★★★★★★★★★
                 document.getElementById('start-work-form')?.addEventListener('submit', handleStartWorkSubmit); 
                 document.getElementById('end-work-form')?.addEventListener('submit', (e) => handleEndWorkSubmit(e, s)); 
             }
+
+            function setupRealTimeValidation(state) {
+                const successfulDeliveries = document.getElementById('successfulDeliveries');
+                const totalDeliveryPoints = document.getElementById('totalDeliveryPoints');
+                const endMileage = document.getElementById('endMileage');
+
+                if (successfulDeliveries && totalDeliveryPoints) {
+                    const validateDeliveries = () => {
+                        const total = Number(totalDeliveryPoints.value) || 0;
+                        const successful = Number(successfulDeliveries.value) || 0;
+                        
+                        if (successful > total && total > 0) {
+                            successfulDeliveries.setCustomValidity('จำนวนส่งสำเร็จต้องไม่เกินจำนวนทั้งหมด');
+                        } else {
+                            successfulDeliveries.setCustomValidity('');
+                        }
+                    };
+
+                    successfulDeliveries.addEventListener('input', validateDeliveries);
+                    totalDeliveryPoints.addEventListener('input', validateDeliveries);
+                }
+
+                if (endMileage && state.workData) {
+                    endMileage.addEventListener('input', function() {
+                        const startMileage = Number(state.workData['เลขไมล์เริ่มงาน']) || 0;
+                        const endMileageValue = Number(this.value) || 0;
+                        
+                        if (endMileageValue <= startMileage && endMileageValue > 0) {
+                            this.setCustomValidity('เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน');
+                        } else {
+                            this.setCustomValidity('');
+                        }
+                    });
+                }
+            }
+
+            function validateStartWorkForm(form) {
+                const startTime = form.querySelector('#startTime').value.trim();
+                const startMileage = form.querySelector('#startMileage').value.trim();
+                const startMileagePhoto = form.querySelector('#startMileagePhoto').files[0];
+                const startEmployeePhoto = form.querySelector('#startEmployeePhoto').files[0];
+
+                const errors = [];
+
+                if (!startTime) errors.push('เวลาเริ่มงาน');
+                if (!startMileage) errors.push('เลขไมล์เริ่มงาน');
+                if (!startMileagePhoto) errors.push('รูปถ่ายเลขไมล์เริ่มงาน');
+                if (!startEmployeePhoto) errors.push('รูปถ่ายพนักงานเริ่มงาน');
+
+                if (startMileage && (isNaN(Number(startMileage)) || Number(startMileage) < 0)) {
+                    errors.push('เลขไมล์เริ่มงานต้องเป็นตัวเลขที่มากกว่าหรือเท่ากับ 0');
+                }
+
+                return {
+                    isValid: errors.length === 0,
+                    errors: errors
+                };
+            }
+
+            function validateEndWorkForm(form, state) {
+                const endTime = form.querySelector('#endTime').value.trim();
+                const endMileage = form.querySelector('#endMileage').value.trim();
+                const workTrips = form.querySelector('#workTrips').value.trim();
+                const totalDeliveryPoints = form.querySelector('#totalDeliveryPoints').value.trim();
+                const successfulDeliveries = form.querySelector('#successfulDeliveries').value.trim();
+                const endMileagePhoto = form.querySelector('#endMileagePhoto').files[0];
+                const endEmployeePhoto = form.querySelector('#endEmployeePhoto').files[0];
+
+                const errors = [];
+
+                if (!endTime) errors.push('เวลาเลิกงาน');
+                if (!endMileage) errors.push('เลขไมล์เลิกงาน');
+                if (!workTrips) errors.push('จำนวนรอบงาน');
+                if (!totalDeliveryPoints) errors.push('จุดส่งทั้งหมด');
+                if (!successfulDeliveries) errors.push('ส่งสำเร็จ');
+                if (!endMileagePhoto) errors.push('รูปถ่ายเลขไมล์เลิกงาน');
+                if (!endEmployeePhoto) errors.push('รูปถ่ายพนักงานเลิกงาน');
+
+                const numericFields = [
+                    { value: endMileage, name: 'เลขไมล์เลิกงาน' },
+                    { value: workTrips, name: 'จำนวนรอบงาน' },
+                    { value: totalDeliveryPoints, name: 'จุดส่งทั้งหมด' },
+                    { value: successfulDeliveries, name: 'ส่งสำเร็จ' }
+                ];
+
+                numericFields.forEach(field => {
+                    if (field.value && (isNaN(Number(field.value)) || Number(field.value) < 0)) {
+                        errors.push(`${field.name}ต้องเป็นตัวเลขที่ถูกต้องและมากกว่าหรือเท่ากับ 0`);
+                    }
+                });
+
+                if (endMileage && state.workData && Number(endMileage) <= Number(state.workData['เลขไมล์เริ่มงาน'])) {
+                    errors.push('เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน');
+                }
+
+                if (successfulDeliveries && totalDeliveryPoints && Number(successfulDeliveries) > Number(totalDeliveryPoints)) {
+                    errors.push('จำนวนส่งสำเร็จต้องไม่เกินจำนวนทั้งหมด');
+                }
+
+                return {
+                    isValid: errors.length === 0,
+                    errors: errors
+                };
+            }
             
-            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน handleStartWorkSubmit ที่มีการยืนยัน ★★★★★★★★★★★★★★★★★★
             async function handleStartWorkSubmit(e) { 
                 e.preventDefault(); 
                 const form = e.target;
+
+                debugLog('Start work form submitted', 'info');
+                const validation = validateStartWorkForm(form);
+                if (!validation.isValid) {
+                    const errorMessage = `กรุณาแก้ไขข้อมูลต่อไปนี้:\n• ${validation.errors.join('\n• ')}`;
+                    debugLog(`Validation failed: ${errorMessage}`, 'warn');
+                    showCustomAlert('ข้อมูลไม่ครบถ้วน', errorMessage, false);
+                    return;
+                }
+
                 const startTime = form.querySelector('#startTime').value;
                 const startMileage = form.querySelector('#startMileage').value;
                 const startMileagePhoto = form.querySelector('#startMileagePhoto').files[0];
                 const startEmployeePhoto = form.querySelector('#startEmployeePhoto').files[0];
 
-                // สร้างข้อความสรุปข้อมูล
                 const summaryMessage = `กรุณาตรวจสอบข้อมูลก่อนบันทึก:\n\n` +
                     `เวลาเริ่มงาน: ${startTime}\n` +
                     `เลขไมล์เริ่มงาน: ${startMileage}\n` +
@@ -228,11 +552,12 @@
                     `รูปถ่ายพนักงาน: ${startEmployeePhoto ? startEmployeePhoto.name : 'ไม่ได้เลือก'}\n\n` +
                     `คุณต้องการบันทึกข้อมูลนี้หรือไม่?`;
 
+                debugLog('Showing confirmation for start work', 'info');
                 showConfirmationPopup(
                     'ยืนยันการบันทึกเวลาเริ่มงาน',
                     summaryMessage,
                     async () => {
-                        // ถ้าผู้ใช้กด "ยืนยัน"
+                        debugLog('User confirmed start work submission', 'info');
                         const btn = form.querySelector('.btn-submit'); 
                         btn.disabled = true; 
                         btn.textContent = "กำลังบันทึก..."; 
@@ -244,24 +569,35 @@
                                 startMileagePhoto: await readFileAsBase64(startMileagePhoto), 
                                 startEmployeePhoto: await readFileAsBase64(startEmployeePhoto), 
                             }; 
+                            debugLog('Sending start work data to server', 'info');
                             const result = await serverCall('saveStartWork', data); 
                             handleServerResponse(result); 
                         } catch (err) { 
+                            debugLog('Error saving start work: ' + err.message, 'error');
                             showCustomAlert('เกิดข้อผิดพลาด', err.message, false); 
                             btn.disabled = false; 
                             btn.textContent = "บันทึกข้อมูลเริ่มงาน"; 
                         }
                     },
                     () => {
-                        // ถ้าผู้ใช้กด "ยกเลิก" - ไม่ทำอะไร
+                        debugLog('User cancelled start work submission', 'info');
                     }
                 );
             }
 
-            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน handleEndWorkSubmit ที่มีการยืนยัน ★★★★★★★★★★★★★★★★★★
             async function handleEndWorkSubmit(e, state) { 
                 e.preventDefault(); 
                 const form = e.target;
+
+                debugLog('End work form submitted', 'info');
+                const validation = validateEndWorkForm(form, state);
+                if (!validation.isValid) {
+                    const errorMessage = `กรุณาแก้ไขข้อมูลต่อไปนี้:\n• ${validation.errors.join('\n• ')}`;
+                    debugLog(`Validation failed: ${errorMessage}`, 'warn');
+                    showCustomAlert('ข้อมูลไม่ถูกต้อง', errorMessage, false);
+                    return;
+                }
+
                 const endTime = form.querySelector('#endTime').value;
                 const endMileage = form.querySelector('#endMileage').value;
                 const workTrips = form.querySelector('#workTrips').value;
@@ -271,12 +607,6 @@
                 const endMileagePhoto = form.querySelector('#endMileagePhoto').files[0];
                 const endEmployeePhoto = form.querySelector('#endEmployeePhoto').files[0];
 
-                if (Number(endMileage) <= Number(state.workData['เลขไมล์เริ่มงาน'])) { 
-                    showCustomAlert('ข้อมูลผิดพลาด', 'เลขไมล์เลิกงานต้องมากกว่าเลขไมล์เริ่มงาน', false); 
-                    return; 
-                }
-
-                // สร้างข้อความสรุปข้อมูล
                 const summaryMessage = `กรุณาตรวจสอบข้อมูลก่อนบันทึก:\n\n` +
                     `เวลาเลิกงาน: ${endTime}\n` +
                     `เลขไมล์เลิกงาน: ${endMileage}\n` +
@@ -288,11 +618,12 @@
                     `รูปถ่ายพนักงาน: ${endEmployeePhoto ? endEmployeePhoto.name : 'ไม่ได้เลือก'}\n\n` +
                     `คุณต้องการบันทึกข้อมูลนี้หรือไม่?`;
 
+                debugLog('Showing confirmation for end work', 'info');
                 showConfirmationPopup(
                     'ยืนยันการบันทึกเวลาเลิกงาน',
                     summaryMessage,
                     async () => {
-                        // ถ้าผู้ใช้กด "ยืนยัน"
+                        debugLog('User confirmed end work submission', 'info');
                         const btn = form.querySelector('.btn-submit'); 
                         btn.disabled = true; 
                         btn.textContent = "กำลังบันทึก..."; 
@@ -308,16 +639,18 @@
                                 endMileagePhoto: await readFileAsBase64(endMileagePhoto), 
                                 endEmployeePhoto: await readFileAsBase64(endEmployeePhoto), 
                             }; 
+                            debugLog('Sending end work data to server', 'info');
                             const result = await serverCall('saveEndWork', data); 
                             handleServerResponse(result); 
                         } catch (err) { 
+                            debugLog('Error saving end work: ' + err.message, 'error');
                             showCustomAlert('เกิดข้อผิดพลาด', err.message, false); 
                             btn.disabled = false; 
                             btn.textContent = "บันทึกข้อมูลเลิกงาน"; 
                         }
                     },
                     () => {
-                        // ถ้าผู้ใช้กด "ยกเลิก" - ไม่ทำอะไร
+                        debugLog('User cancelled end work submission', 'info');
                     }
                 );
             }
@@ -325,10 +658,10 @@
             function handleServerResponse(result) {
                 const title = `คุณ ${liffProfile.displayName}`;
                 const message = result.message;
+                debugLog(`Server response handled: ${JSON.stringify(result)}`, result.status === 'success' ? 'success' : 'error');
                 showCustomAlert(title, message, result.status === 'success');
             }
 
-            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน showConfirmationPopup ใหม่ ★★★★★★★★★★★★★★★★★★
             function showConfirmationPopup(title, message, onConfirm, onCancel) {
                 const overlay = document.getElementById('custom-alert-overlay');
                 const titleEl = document.getElementById('custom-alert-title');
@@ -343,11 +676,9 @@
                 overlay.classList.remove('hidden');
                 clearInterval(countdownInterval);
 
-                // แสดงปุ่มยืนยัน/ยกเลิก และซ่อนปุ่มปิด
                 closeBtn.classList.add('hidden');
                 confirmationButtons.classList.remove('hidden');
 
-                // ลบ event listeners เก่า
                 yesBtn.onclick = null;
                 noBtn.onclick = null;
 
@@ -362,7 +693,6 @@
                 };
             }
 
-            // ★★★★★★★★★★★★★★★★★★ ฟังก์ชัน showCustomAlert ที่ปรับปรุงแล้ว ★★★★★★★★★★★★★★★★★★
             function showCustomAlert(title, message, isSuccess = false) {
                 const overlay = document.getElementById('custom-alert-overlay');
                 const titleEl = document.getElementById('custom-alert-title');
@@ -375,9 +705,10 @@
                 overlay.classList.remove('hidden');
                 clearInterval(countdownInterval);
 
-                // แสดงปุ่มปิด และซ่อนปุ่มยืนยัน/ยกเลิก
                 closeBtn.classList.remove('hidden');
                 confirmationButtons.classList.add('hidden');
+
+                debugLog(`Alert shown: ${title} - ${message}`, isSuccess ? 'success' : 'error');
 
                 if (isSuccess) {
                     let countdown = 5;
@@ -406,6 +737,7 @@
             }
 
             function closeAndExit() {
+                debugLog('Closing window or reloading page', 'info');
                 document.getElementById('custom-alert-overlay').classList.add('hidden');
                 if (liff.isInClient()) {
                     liff.closeWindow();
