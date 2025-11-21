@@ -177,14 +177,66 @@
                 showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
             }
         }
-        
-        function serverCall(action, ...args) {
+        // ฟังก์ชัน serverCall แบบอัปเกรด (Auto-Retry + แจ้งเตือนผู้ใช้)
+        async function serverCall(action, ...args) {
             const url = GAS_WEB_APP_URL;
             const payload = { action: action, args: args };
-            return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, mode: 'cors' })
-                .then(response => response.json())
-                .then(data => { if (data.status === 'error') { throw new Error(data.message); } return data.response; });
+            const maxRetries = 3; // จำนวนครั้งสูงสุดที่จะลอง
+
+            // 1. จำข้อความเดิมไว้ก่อน (เช่น "กำลังบันทึกข้อมูล...")
+            let originalText = "";
+            if (typeof dom !== 'undefined' && dom.loadingText) {
+                originalText = dom.loadingText.textContent; 
+            }
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        mode: 'cors'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP Error: ${response.status}`);
+                    }
+
+                    const json = await response.json();
+                    
+                    if (json.status === 'error') {
+                        // ถ้า Server ตอบว่า Error (เช่น ข้อมูลผิด) ไม่ต้องลองใหม่
+                        throw new Error(json.message);
+                    }
+
+                    return json.response; // สำเร็จ! ส่งค่ากลับ
+
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed: ${error.message}`);
+                    
+                    // ถ้าเป็นรอบสุดท้ายแล้วยังพัง ให้โยน Error ออกไป
+                    if (i === maxRetries - 1) {
+                        throw error;
+                    }
+
+                    // ★★★ ส่วนที่เพิ่ม: แจ้งเตือนผู้ใช้ ★★★
+                    if (typeof dom !== 'undefined' && dom.loadingText) {
+                        // เปลี่ยนข้อความให้รู้ว่ากำลังพยายามใหม่
+                        // ใช้สีส้มเพื่อให้ดูเด่นขึ้นเล็กน้อย
+                        dom.loadingText.innerHTML = `
+                            ${originalText}<br>
+                            <span style="font-size: 0.9rem; color: #f5a623; font-weight: normal;">
+                                สัญญาณไม่เสถียร... กำลังเชื่อมต่อใหม่ (ครั้งที่ ${i + 2}/${maxRetries})
+                            </span>
+                        `;
+                    }
+
+                    // รอ 1.5 วินาที (เพิ่มเวลาหน่อยให้อ่านทันและให้ระบบพัก)
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                }
+            }
         }
+        
 
         let countdownInterval;
         function showCustomAlert(title, message, isSuccess = false) {
