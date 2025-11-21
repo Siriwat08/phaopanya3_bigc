@@ -182,8 +182,16 @@
             // ★★★★★ Added 'required' to inputs ★★★★★
             function createEndFormView({ workData: w }) { return `<form id="end-work-form" class="view card"><h2 class="view-title">บันทึกเวลาเลิกงาน</h2><div class="form-group"><label>เวลาเลิกงาน</label><input type="time" id="endTime" required></div><div class="form-group"><label>เลขไมล์เลิกงาน</label><input type="number" id="endMileage" required></div><div class="form-group"><label>จำนวนรอบงาน</label><input type="number" id="workTrips" required></div><div class="form-group"><label>จุดส่งทั้งหมด</label><input type="number" id="totalDeliveryPoints" required></div><div class="form-group"><label>ส่งสำเร็จ</label><input type="number" id="successfulDeliveries" required></div><div class="form-group"><label>หมายเหตุ</label><textarea id="notes" rows="3" required></textarea></div><div class="form-group"><label>รูปถ่ายเลขไมล์เลิกงาน</label><input type="file" id="endMileagePhoto" accept="image/*" required></div><div class="form-group"><label>รูปถ่ายพนักงานเลิกงาน</label><input type="file" id="endEmployeePhoto" accept="image/*" required></div><button type="submit" class="btn btn-submit">ตรวจสอบข้อมูล</button></form>`; }
             
-            function createSummaryView({ workData: w }) { return `<div class="view card"><h2 class="view-title">สรุปข้อมูลประจำวัน</h2><p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p><p><b>เวลาทำงาน:</b> ${w['เวลาเริ่มงาน'] || '-'} - ${w['เวลาเลิกงาน'] || '-'} (${w['จำนวนชั่วโมงการทำงาน'] || 'N/A'} ชม.)</p><p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p><p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p><p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p></div>`; }
-            function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = r['เวลาเริ่มงาน'] || '-'; const endTimeDisplay = r['เวลาเลิกงาน'] || '-'; const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
+            function createSummaryView({ workData: w }) { 
+    return `<div class="view card">
+        <h2 class="view-title">สรุปข้อมูลประจำวัน</h2>
+        <p><b>วันที่:</b> ${formatDateForDisplay(w['ข้อมูลงานวันที่'])}</p>
+        <p><b>เวลาทำงาน:</b> ${w['เวลาเริ่มงาน'] || '-'} - ${w['เวลาเลิกงาน'] || '-'} (${formatDecimalToTime(w['จำนวนชั่วโมงการทำงาน'])} ชม.)</p>
+        <p><b>ระยะทางรวม:</b> ${w['ระยะทางรวม'] || 'N/A'} กม.</p>
+        <p><b>การส่งของ:</b> สำเร็จ ${w['จำนวนจุดที่ส่งสำเร็จ']}/${w['จำนวนจุดที่นำออกส่งทั้งหมด']} จุด</p>
+        <p><b>หมายเหตุ:</b> ${w['ระบุ/หมายเหตุ'] || '-'}</p>
+    </div>`; 
+            }function createHistoryTableView(h) { const c = ['วันที่', 'เวลาเริ่มงาน', 'เวลาเลิกงาน', 'ระยะทางรวม', 'จำนวนจุดที่ส่งสำเร็จ']; let th = '<tr>' + c.map(col => `<th>${col}</th>`).join('') + '</tr>'; let tb = h.map(r => { const dateDisplay = formatDateForDisplay(r['ข้อมูลงานวันที่']); const startTimeDisplay = r['เวลาเริ่มงาน'] || '-'; const endTimeDisplay = r['เวลาเลิกงาน'] || '-'; const mileageDisplay = r['ระยะทางรวม'] || '-'; const successDisplay = r['จำนวนจุดที่ส่งสำเร็จ'] || '-'; return `<tr><td>${dateDisplay}</td><td>${startTimeDisplay}</td><td>${endTimeDisplay}</td><td>${mileageDisplay}</td><td>${successDisplay}</td></tr>`; }).join(''); return `<div class="card"><h2 class="view-title">ประวัติ 5 วันล่าสุด</h2><div id="history-table-wrapper"><table class="history-table"><thead>${th}</thead><tbody>${tb}</tbody></table></div></div>`; }
             
             function addEventListeners(s) { 
                 document.getElementById('show-start-form-btn')?.addEventListener('click', () => { dom.viewContainer.innerHTML = createStartFormView(); addEventListeners(s); }); 
@@ -391,6 +399,17 @@
             }
 
             function formatDateForDisplay(dateValue) { if (!dateValue) return '-'; const date = new Date(dateValue); if (isNaN(date.getTime())) { return dateValue; } const day = String(date.getDate()).padStart(2, '0'); const month = String(date.getMonth() + 1).padStart(2, '0'); const year = date.getFullYear(); return `${day}/${month}/${year}`; }
+            // ★★★ ฟังก์ชันใหม่: แปลงทศนิยม (0.53) เป็น เวลา (0.32) ★★★
+    function formatDecimalToTime(decimalValue) {
+        if (!decimalValue || isNaN(decimalValue)) return '0.00';
+        
+        const val = Number(decimalValue);
+        const hours = Math.floor(val); // เอาเลขหน้าจุด (ชั่วโมง)
+        const minutes = Math.round((val % 1) * 60); // เอาเลขหลังจุดคูณ 60 (นาที)
+        
+        // จัดรูปแบบให้สวยงาม (ถ้าได้ 5 นาที ให้เป็น 05)
+        return `${hours}.${minutes < 10 ? '0' : ''}${minutes}`;
+    }
         });
     </script>
 </body>
