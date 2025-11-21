@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ลงทะเบียนพนักงาน</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
@@ -47,16 +47,6 @@
             transition: border-color 0.2s; 
         }
         
-        /* Enhanced Input Validation Styles */
-        .form-group input:invalid:not(:placeholder-shown), 
-        .form-group select:invalid:not([value=""]) {
-            border-color: var(--error-color);
-            box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
-        }
-        .form-group input:valid:not(:placeholder-shown), 
-        .form-group select:valid:not([value=""]) {
-            border-color: var(--success-color);
-        }
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: var(--primary-color);
@@ -83,7 +73,8 @@
         }
         .btn-submit:disabled { background-color: #cccccc; cursor: not-allowed; }
         .btn-submit:hover:not(:disabled) { background-color: #05b34a; }
-        #loading-view { text-align: center; }
+        
+        #loading-view { text-align: center; position: fixed; inset: 0; background: white; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .spinner { 
             border: 4px solid rgba(0,0,0,0.1); 
             width: 36px; 
@@ -91,7 +82,7 @@
             border-radius: 50%; 
             border-left-color: #06C755; 
             animation: spin 1s linear infinite; 
-            margin: 2rem auto; 
+            margin-bottom: 1rem;
         }
         .hidden { display: none !important; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -105,118 +96,13 @@
         .confirmation-buttons { display: flex; gap: 1rem; justify-content: center; }
         .btn-confirm, .btn-cancel { flex: 1; padding: 0.75rem 1.5rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
         .btn-confirm { background-color: #06C755; color: white; }
-        .btn-confirm:hover { background-color: #05b34a; }
         .btn-cancel { background-color: #f44336; color: white; }
-        .btn-cancel:hover { background-color: #d32f2f; }
 
-        /* Debug Console Styles - ซ่อนสำหรับ User ทั่วไป */
-        #debug-console, #debug-toggle {
-            display: none !important; /* ซ่อนเป็นค่าเริ่มต้น */
-        }
-        
-        /* แสดงเฉพาะเมื่อมี admin-access class */
-        body.admin-access #debug-toggle {
-            display: block !important;
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background-color: #333;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
-            z-index: 1002;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-            transition: bottom 0.2s ease-in-out;
-        }
-        
-        body.admin-access #debug-console {
-            display: flex !important;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 250px;
-            background-color: #1e1e1e;
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            z-index: 1001;
-            border-top: 2px solid #444;
-            flex-direction: column;
-            transform: translateY(100%);
-            transition: transform 0.2s ease-in-out;
-        }
-
-        body.admin-access.debug-console-visible {
-            padding-bottom: 280px;
-        }
-        
-        body.admin-access.debug-console-visible #debug-console {
-            transform: translateY(0);
-        }
-
-        body.admin-access.debug-console-visible #debug-toggle {
-            bottom: 260px;
-        }
-        
-        /* Debug Console Internal Styles */
-        #debug-header {
-            background-color: #333;
-            padding: 8px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #555;
-        }
-        #debug-title {
-            color: #06C755;
-            font-weight: bold;
-            margin: 0;
-        }
-        #debug-controls {
-            display: flex;
-            gap: 8px;
-        }
-        .debug-btn {
-            background-color: #444;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-        }
-        .debug-btn:hover {
-            background-color: #555;
-        }
-        #debug-output {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-            line-height: 1.4;
-        }
-        .debug-entry {
-            margin-bottom: 4px;
-            word-wrap: break-word;
-        }
-        .debug-timestamp {
-            color: #888;
-            margin-right: 8px;
-        }
-        .debug-level {
-            font-weight: bold;
-            margin-right: 8px;
-        }
-        .debug-info .debug-level { color: #87CEEB; }
-        .debug-success .debug-level { color: #90EE90; }
-        .debug-warn .debug-level { color: #FFD700; }
-        .debug-error .debug-level { color: #FF6B6B; }
-        .debug-message {
-            color: #ffffff;
-        }
+        /* Debug Console */
+        #debug-toggle { display: none; position: fixed; bottom: 10px; right: 10px; background: #333; color: white; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; z-index: 1002; }
+        #debug-console { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background: rgba(0,0,0,0.9); color: #0f0; font-family: monospace; font-size: 11px; z-index: 1001; overflow-y: auto; padding: 10px; }
+        .debug-entry { margin-bottom: 4px; border-bottom: 1px solid #333; }
+        .debug-error { color: #ff6b6b; } .debug-success { color: #51cf66; }
     </style>
 </head>
 <body>
@@ -253,7 +139,6 @@
         </form>
     </div>
 
-    <!-- Custom Popup -->
     <div id="custom-alert-overlay" class="hidden">
         <div id="custom-alert-box">
             <h3 id="custom-alert-title"></h3>
@@ -266,371 +151,115 @@
         </div>
     </div>
 
-    <!-- Debug Console - ซ่อนไว้สำหรับ Admin เท่านั้น -->
-    <button id="debug-toggle">🐛 Debug</button>
-    <div id="debug-console">
-        <div id="debug-header">
-            <h4 id="debug-title">Debug Console</h4>
-            <div id="debug-controls">
-                <button class="debug-btn" onclick="debugClear()">Clear</button>
-                <button class="debug-btn" onclick="debugToggleConsole()">Hide</button>
-            </div>
-        </div>
-        <div id="debug-output"></div>
-    </div>
+    <button id="debug-toggle">BUG</button>
+    <div id="debug-console"></div>
 
     <script>
         const LIFF_ID = '2008326721-bmkWomzv'; 
-        // ★★★★★★★★★★★★★★★★★★ สำคัญ: อัปเดต URL หลัง Deploy ใหม่ ★★★★★★★★★★★★★★★★★★
-        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyT-NLv1N9X8oCIHS1WZjDUKhfnY3_DYzdBbNfnvI1xTEmH2AguFRG1ReCY5fGcgLGOWw/exec';
+        // ★★★★★ แก้ไข URL ตรงนี้ให้ตรงกับ index.html ★★★★★
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzVZDc9PIiKF_9OWofaVTaA_07dDDvY6ljPR37eq-yrRCcebzp_MNB2dGcsM0_QHtaUVg/exec';
 
         let liffProfile = null;
         let countdownInterval;
-        let isCurrentUserAdmin = false; // ตัวแปรเก็บสถานะ Admin
-        let retryCount = 0; // ตัวแปรนับการลองใหม่
-        const MAX_RETRY = 3; // จำนวนครั้งสูงสุดที่จะลองใหม่
+        let isAdmin = false;
 
-        // ★★★★★★★★★★★★★★★★★★ Debug Console Functions ★★★★★★★★★★★★★★★★★★
-        function debugLog(message, level = 'info') {
-            if (!isCurrentUserAdmin) return; // เฉพาะ Admin เท่านั้นที่เข้าถึงได้
-            
-            const output = document.getElementById('debug-output');
-            if (!output) return;
-
-            const timestamp = new Date().toLocaleTimeString('th-TH');
-            const entry = document.createElement('div');
-            entry.className = `debug-entry debug-${level}`;
-            entry.innerHTML = `<span class="debug-timestamp">[${timestamp}]</span><span class="debug-level">${level.toUpperCase()}:</span><span class="debug-message">${message}</span>`;
-            
-            output.appendChild(entry);
-            output.scrollTop = output.scrollHeight;
-
-            // เก็บเฉพาะ 100 entries ล่าสุด
-            while (output.children.length > 100) {
-                output.removeChild(output.firstChild);
-            }
-
-            // Log ไปยัง browser console ด้วย (สำหรับ debugging เพิ่มเติม)
-            console.log(`[${timestamp}] ${level.toUpperCase()}: ${message}`);
-        }
-
-        window.debugClear = function() {
-            if (!isCurrentUserAdmin) return;
-            const output = document.getElementById('debug-output');
-            if (output) output.innerHTML = '';
-            debugLog('Console cleared.', 'info');
-        };
-
-        window.debugToggleConsole = function() {
-            if (!isCurrentUserAdmin) return;
-            document.body.classList.toggle('debug-console-visible');
-        };
-
-        // Debug toggle button event
-        document.getElementById('debug-toggle').addEventListener('click', () => {
-            if (!isCurrentUserAdmin) return;
-            window.debugToggleConsole();
-        });
-
-        // ★★★★★★★★★★★★★★★★★★ Admin Access Management ★★★★★★★★★★★★★★★★★★
-        function enableAdminAccess() {
-            document.body.classList.add('admin-access');
-            debugLog('🔓 Debug Console enabled for Admin user', 'success');
-        }
-
-        function disableAdminAccess() {
-            document.body.classList.remove('admin-access', 'debug-console-visible');
-            // ไม่ต้อง log เพราะ user ทั่วไปไม่ควรเห็น
-        }
-
-        // ★★★★★★★★★★★★★★★★★★ Enhanced serverCall with Retry Logic ★★★★★★★★★★★★★★★★★★
-        async function serverCall(action, ...args) {
-            const url = GAS_WEB_APP_URL;
-            const payload = { action: action, args: args };
-            debugLog(`🌐 Server call: ${action} (attempt ${retryCount + 1}/${MAX_RETRY})`, 'info');
-            
-            // ตรวจสอบ URL
-            if (!url || url.includes('YOUR_')) {
-                const error = 'GAS_WEB_APP_URL ยังไม่ได้ตั้งค่าหรือไม่ถูกต้อง';
-                debugLog(error, 'error');
-                throw new Error(error);
-            }
-
-            // ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต
-            if (!navigator.onLine) {
-                const error = 'ไม่มีการเชื่อมต่ออินเทอร์เน็ต';
-                debugLog(error, 'error');
-                throw new Error(error);
-            }
-
-            const requestOptions = {
-                method: 'POST',
-                body: JSON.stringify(payload),
-                headers: { 
-                    'Content-Type': 'text/plain;charset=utf-8',
-                    'Cache-Control': 'no-cache'
-                },
-                mode: 'cors'
-            };
-
-            // สร้าง timeout promise
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                    reject(new Error('การเชื่อมต่อหมดเวลา (30 วินาที)'));
-                }, 30000);
-            });
-
-            const fetchPromise = fetch(url, requestOptions)
-                .then(response => {
-                    debugLog(`📡 Response status: ${response.status} ${response.statusText}`, 'info');
-                    
-                    if (!response.ok) {
-                        throw new Error(`Network response was not ok: ${response.status} ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    debugLog(`📥 Server response for ${action}: ${JSON.stringify(data)}`, data.status === 'error' ? 'error' : 'success');
-                    
-                    if (data.status === 'error') {
-                        throw new Error(data.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ');
-                    }
-                    
-                    retryCount = 0; // รีเซ็ต retry count เมื่อสำเร็จ
-                    return data.response;
-                })
-                .catch(async (error) => {
-                    let errorMessage = error.message;
-                    
-                    // จัดการ error message ให้เป็นภาษาไทย
-                    if (error.name === 'TypeError' || error.message.includes('Failed to fetch')) {
-                        errorMessage = 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้';
-                    } else if (error.message.includes('timeout')) {
-                        errorMessage = 'การเชื่อมต่อหมดเวลา';
-                    }
-                    
-                    debugLog(`❌ Server call ERROR for ${action}: ${errorMessage}`, 'error');
-                    
-                    // Retry Logic สำหรับ network errors
-                    if (retryCount < MAX_RETRY - 1 && (
-                        error.name === 'TypeError' || 
-                        error.message.includes('Failed to fetch') || 
-                        error.message.includes('timeout')
-                    )) {
-                        retryCount++;
-                        debugLog(`🔄 Retrying... (${retryCount}/${MAX_RETRY})`, 'warn');
-                        
-                        // รอ 2 วินาทีก่อนลองใหม่
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        return serverCall(action, ...args);
-                    }
-                    
-                    retryCount = 0; // รีเซ็ต retry count
-                    throw new Error(errorMessage);
-                });
-
-            return Promise.race([fetchPromise, timeoutPromise]);
-        }
-
-        // ★★★★★★★★★★★★★★★★★★ Main Function ★★★★★★★★★★★★★★★★★★
-        async function main() {
-            debugLog('🚀 Starting LIFF registration application...', 'info');
+        // --- INIT ---
+        window.onload = async () => {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                debugLog('✅ LIFF Init successful', 'success');
-
                 if (!liff.isLoggedIn()) { 
-                    debugLog('⚠️ User not logged in, redirecting to LIFF login.', 'warn');
                     liff.login(); 
                     return; 
                 }
                 
-                debugLog('👤 Fetching LIFF profile...', 'info');
                 liffProfile = await liff.getProfile();
-                debugLog(`✅ Fetched LIFF profile: ${liffProfile.displayName} (${liffProfile.userId})`, 'success');
-
-                // ตรวจสอบสิทธิ์ Admin
-                debugLog('🔐 Checking admin status...', 'info');
-                try {
-                    isCurrentUserAdmin = await serverCall('checkAdminStatus', liffProfile.userId);
-                    debugLog(`👑 Admin status: ${isCurrentUserAdmin}`, 'info');
-                    
-                    if (isCurrentUserAdmin) {
-                        enableAdminAccess();
-                    } else {
-                        disableAdminAccess();
-                    }
-                } catch (error) {
-                    debugLog('❌ Error checking admin status: ' + error.message, 'error');
-                    disableAdminAccess(); // ถ้า error ให้ปิด debug access
+                
+                // Check Admin for Debug Console
+                isAdmin = await serverCall('checkAdminStatus', liffProfile.userId);
+                if (isAdmin) {
+                    document.getElementById('debug-toggle').style.display = 'block';
+                    debug('Admin Detected');
                 }
-                
-                debugLog('🏢 Fetching branch list from server...', 'info');
+
+                // Fetch Branch List
+                debug('Fetching branches...');
                 const branches = await serverCall('getBranchList');
-                debugLog(`✅ Fetched ${branches.length} branches`, 'success');
-                
                 populateBranchDropdown(branches);
+                
+                // Setup Validation
                 setupRealTimeValidation();
                 
                 document.getElementById('loading-view').classList.add('hidden');
                 document.getElementById('register-form-container').classList.remove('hidden');
-                debugLog('🎉 Registration form loaded successfully.', 'success');
 
             } catch (error) {
-                debugLog('💥 Error in main function: ' + error.message, 'error');
-                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
-                document.getElementById('loading-view').classList.add('hidden');
+                showCustomAlert('Error', error.message);
+                debug('Error: ' + error.message, true);
             }
-        }
+        };
 
-        main();
-
-        function populateBranchDropdown(branches) {
-            const selectElement = document.getElementById('branch');
-            if (branches && branches.length > 0) {
-                branches.forEach(branchObj => {
-                    const option = document.createElement('option');
-                    option.value = branchObj.BranchName;
-                    option.textContent = branchObj.BranchName;
-                    selectElement.appendChild(option);
+        // --- SERVER CALL ---
+        async function serverCall(action, ...args) {
+            debug(`Call: ${action}`);
+            try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: action, args: args }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
                 });
-                debugLog(`📋 Populated ${branches.length} branches in dropdown`, 'info');
-            } else {
-                debugLog('⚠️ No branches found to populate', 'warn');
+                const json = await response.json();
+                if (json.status === 'error') throw new Error(json.message);
+                return json.response;
+            } catch (err) {
+                debug(`Error: ${err.message}`, true);
+                throw err;
             }
         }
 
-        // ★★★★★★★★★★★★★★★★★★ Real-time Validation Setup ★★★★★★★★★★★★★★★★★★
-        function setupRealTimeValidation() {
-            debugLog('🔧 Setting up real-time validation...', 'info');
-            const contactNumber = document.getElementById('contactNumber');
-            const fullName = document.getElementById('fullName');
-            const licensePlate = document.getElementById('licensePlate');
-
-            // เบอร์โทรศัพท์ - อนุญาตเฉพาะตัวเลข
-            contactNumber.addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '');
-                if (this.value.length > 10) {
-                    this.value = this.value.slice(0, 10);
-                }
-                
-                if (this.value.length === 10) {
-                    this.setCustomValidity('');
-                } else if (this.value.length > 0) {
-                    this.setCustomValidity('เบอร์ติดต่อต้องเป็นตัวเลข 10 หลัก');
-                }
-            });
-
-            // ชื่อ - ป้องกันการใส่ตัวเลขเท่านั้น
-            fullName.addEventListener('input', function() {
-                const value = this.value.trim();
-                if (value && /^[0-9\s]+$/.test(value)) {
-                    this.setCustomValidity('ชื่อ - นามสกุล ไม่สามารถเป็นตัวเลขเท่านั้น');
-                } else {
-                    this.setCustomValidity('');
-                }
-            });
-
-            // ทะเบียนรถ - ตรวจสอบรูปแบบพื้นฐาน
-            licensePlate.addEventListener('input', function() {
-                const value = this.value.trim();
-                if (value.length > 0 && value.length < 3) {
-                    this.setCustomValidity('ทะเบียนรถต้องมีอย่างน้อย 3 ตัวอักษร');
-                } else {
-                    this.setCustomValidity('');
-                }
-            });
-
-            debugLog('✅ Real-time validation setup completed', 'success');
+        // --- UI LOGIC ---
+        function populateBranchDropdown(branches) {
+            const select = document.getElementById('branch');
+            if (branches && branches.length > 0) {
+                branches.forEach(b => {
+                    const opt = document.createElement('option');
+                    opt.value = b.BranchName;
+                    opt.textContent = b.BranchName;
+                    select.appendChild(opt);
+                });
+            }
         }
 
-        // ★★★★★★★★★★★★★★★★★★ Enhanced Form Validation ★★★★★★★★★★★★★★★★★★
-        function validateRegistrationForm() {
-            debugLog('🔍 Validating registration form...', 'info');
+        function setupRealTimeValidation() {
+            // Number only for Phone
+            document.getElementById('contactNumber').addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+            });
+        }
+
+        // --- SUBMIT HANDLER ---
+        document.getElementById('register-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
             const fullName = document.getElementById('fullName').value.trim();
             const licensePlate = document.getElementById('licensePlate').value.trim();
             const contactNumber = document.getElementById('contactNumber').value.trim();
             const branch = document.getElementById('branch').value;
 
-            const errors = [];
-
-            // ตรวจสอบข้อมูลครบถ้วน
-            if (!fullName) errors.push('ชื่อ - นามสกุล');
-            if (!licensePlate) errors.push('ทะเบียนรถ');
-            if (!contactNumber) errors.push('เบอร์ติดต่อ');
-            if (!branch) errors.push('สาขา');
-
-            // ตรวจสอบรูปแบบเบอร์โทร
-            if (contactNumber && !/^[0-9]{10}$/.test(contactNumber)) {
-                errors.push('เบอร์ติดต่อต้องเป็นตัวเลข 10 หลัก');
-            }
-
-            // ตรวจสอบชื่อไม่เป็นตัวเลขเท่านั้น
-            if (fullName && /^[0-9\s]+$/.test(fullName)) {
-                errors.push('ชื่อ - นามสกุล ไม่สามารถเป็นตัวเลขเท่านั้น');
-            }
-
-            // ตรวจสอบความยาวทะเบียนรถ
-            if (licensePlate && licensePlate.length < 3) {
-                errors.push('ทะเบียนรถต้องมีอย่างน้อย 3 ตัวอักษร');
-            }
-
-            // ตรวจสอบอักขระพิเศษในชื่อ
-            if (fullName && /[<>\"'&]/.test(fullName)) {
-                errors.push('ชื่อ - นามสกุล ไม่สามารถมีอักขระพิเศษได้');
-            }
-
-            const result = {
-                isValid: errors.length === 0,
-                errors: errors,
-                data: {
-                    fullName,
-                    licensePlate,
-                    contactNumber,
-                    branch
-                }
-            };
-
-            debugLog(`📊 Form validation: ${result.isValid ? 'PASSED' : 'FAILED'} - Errors: ${errors.join(', ')}`, result.isValid ? 'success' : 'warn');
-            
-            return result;
-        }
-
-        // ★★★★★★★★★★★★★★★★★★ Enhanced Form Submit Handler ★★★★★★★★★★★★★★★★★★
-        document.getElementById('register-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            debugLog('📝 Registration form submitted', 'info');
-            
-            // ตรวจสอบข้อมูลครบถ้วน
-            const validation = validateRegistrationForm();
-            if (!validation.isValid) {
-                const errorMessage = `กรุณาแก้ไขข้อมูลต่อไปนี้:\n• ${validation.errors.join('\n• ')}`;
-                debugLog(`❌ Validation failed: ${errorMessage}`, 'error');
-                showCustomAlert('ข้อมูลไม่ถูกต้อง', errorMessage, false);
+            // Basic Validation
+            if(contactNumber.length !== 10) {
+                showCustomAlert('ข้อมูลไม่ถูกต้อง', 'เบอร์ติดต่อต้องมี 10 หลัก');
                 return;
             }
 
-            const { fullName, licensePlate, contactNumber, branch } = validation.data;
+            const msg = `ยืนยันข้อมูลการลงทะเบียน:\n\nชื่อ: ${fullName}\nทะเบียน: ${licensePlate}\nเบอร์: ${contactNumber}\nสาขา: ${branch}`;
 
-            // สร้างข้อความสรุปข้อมูล
-            const summaryMessage = `กรุณาตรวจสอบข้อมูลก่อนลงทะเบียน:\n\n` +
-                `ชื่อ - นามสกุล: ${fullName}\n` +
-                `ทะเบียนรถ: ${licensePlate}\n` +
-                `เบอร์ติดต่อ: ${contactNumber}\n` +
-                `สาขา: ${branch}\n\n` +
-                `⚠️ หมายเหตุ: ข้อมูลนี้จะไม่สามารถแก้ไขได้หลังจากลงทะเบียนแล้ว\n\n` +
-                `คุณต้องการลงทะเบียนข้อมูลนี้หรือไม่?`;
+            showConfirmationPopup('ยืนยันการลงทะเบียน', msg, async () => {
+                const loading = document.getElementById('loading-view');
+                loading.classList.remove('hidden');
+                loading.querySelector('p').textContent = 'กำลังบันทึกข้อมูล...';
+                document.getElementById('register-form-container').classList.add('hidden');
 
-            debugLog('🔍 Showing registration confirmation popup', 'info');
-            showConfirmationPopup(
-                'ยืนยันการลงทะเบียน',
-                summaryMessage,
-                async () => {
-                    debugLog('✅ User confirmed registration', 'info');
-                    document.getElementById('register-form-container').classList.add('hidden');
-                    document.getElementById('loading-view').classList.remove('hidden');
-                    document.querySelector('#loading-view p').textContent = 'กำลังลงทะเบียน...';
-
+                try {
                     const data = { 
                         userId: liffProfile.userId, 
                         'ชื่อ - นามสกุล': fullName, 
@@ -638,111 +267,75 @@
                         'เบอร์ติดต่อ': contactNumber, 
                         'สาขา': branch 
                     };
-
-                    try {
-                        debugLog('📤 Sending registration data to server', 'info');
-                        const result = await serverCall('registerEmployee', data);
-                        debugLog(`📋 Registration result: ${JSON.stringify(result)}`, result.status === 'success' ? 'success' : 'warn');
-                        
-                        document.getElementById('loading-view').classList.add('hidden');
-                        showCustomAlert(`คุณ ${liffProfile.displayName}`, result.message, result.status === 'success');
-                    } catch (error) {
-                        debugLog('💥 Registration error: ' + error.message, 'error');
-                        document.getElementById('loading-view').classList.add('hidden');
-                        document.getElementById('register-form-container').classList.remove('hidden');
-                        showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
-                    }
-                },
-                () => {
-                    debugLog('❌ User cancelled registration', 'info');
+                    
+                    const res = await serverCall('registerEmployee', data);
+                    loading.classList.add('hidden');
+                    showCustomAlert('สำเร็จ', res.message, true); // Success = true -> Redirect
+                } catch(err) {
+                    loading.classList.add('hidden');
+                    document.getElementById('register-form-container').classList.remove('hidden');
+                    showCustomAlert('ผิดพลาด', err.message);
                 }
-            );
+            });
         });
 
-        // ★★★★★★★★★★★★★★★★★★ Popup Functions ★★★★★★★★★★★★★★★★★★
-        function showConfirmationPopup(title, message, onConfirm, onCancel) {
+        // --- POPUP & UTILS ---
+        function showConfirmationPopup(title, message, onConfirm) {
             const overlay = document.getElementById('custom-alert-overlay');
-            const titleEl = document.getElementById('custom-alert-title');
-            const messageEl = document.getElementById('custom-alert-message');
-            const closeBtn = document.getElementById('custom-alert-close-btn');
-            const confirmationButtons = document.getElementById('confirmation-buttons');
-            const yesBtn = document.getElementById('confirmation-yes-btn');
-            const noBtn = document.getElementById('confirmation-no-btn');
-
-            titleEl.textContent = title;
-            messageEl.textContent = message;
+            document.getElementById('custom-alert-title').innerText = title;
+            document.getElementById('custom-alert-message').innerText = message;
+            document.getElementById('confirmation-buttons').classList.remove('hidden');
+            document.getElementById('custom-alert-close-btn').classList.add('hidden');
             overlay.classList.remove('hidden');
-            clearInterval(countdownInterval);
 
-            // แสดงปุ่มยืนยัน/ยกเลิก และซ่อนปุ่มปิด
-            closeBtn.classList.add('hidden');
-            confirmationButtons.classList.remove('hidden');
-
-            // ลบ event listeners เก่า
-            yesBtn.onclick = null;
-            noBtn.onclick = null;
-
-            yesBtn.onclick = () => {
+            document.getElementById('confirmation-yes-btn').onclick = () => {
                 overlay.classList.add('hidden');
-                if (onConfirm) onConfirm();
+                onConfirm();
             };
-
-            noBtn.onclick = () => {
+            document.getElementById('confirmation-no-btn').onclick = () => {
                 overlay.classList.add('hidden');
-                if (onCancel) onCancel();
             };
         }
 
         function showCustomAlert(title, message, isSuccess = false) {
             const overlay = document.getElementById('custom-alert-overlay');
-            const titleEl = document.getElementById('custom-alert-title');
-            const messageEl = document.getElementById('custom-alert-message');
+            document.getElementById('custom-alert-title').innerText = title;
+            document.getElementById('custom-alert-message').innerText = message;
+            document.getElementById('confirmation-buttons').classList.add('hidden');
             const closeBtn = document.getElementById('custom-alert-close-btn');
-            const confirmationButtons = document.getElementById('confirmation-buttons');
-
-            titleEl.textContent = title;
-            messageEl.textContent = message;
-            overlay.classList.remove('hidden');
-            clearInterval(countdownInterval);
-
-            // แสดงปุ่มปิด และซ่อนปุ่มยืนยัน/ยกเลิก
             closeBtn.classList.remove('hidden');
-            confirmationButtons.classList.add('hidden');
-
-            debugLog(`🔔 Alert shown: ${title} - ${message}`, isSuccess ? 'success' : 'error');
+            overlay.classList.remove('hidden');
 
             if (isSuccess) {
-                let countdown = 5;
-                closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
-                countdownInterval = setInterval(() => {
-                    countdown--;
-                    if (countdown > 0) {
-                        closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
-                    } else {
-                        clearInterval(countdownInterval);
-                        closeAndExit();
+                let count = 3;
+                closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${count})`;
+                const interval = setInterval(() => {
+                    count--;
+                    closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${count})`;
+                    if(count <= 0) {
+                        clearInterval(interval);
+                        window.location.href = 'index.html';
                     }
                 }, 1000);
+                closeBtn.onclick = () => window.location.href = 'index.html';
             } else {
                 closeBtn.textContent = 'ตกลง';
+                closeBtn.onclick = () => overlay.classList.add('hidden');
             }
-
-            closeBtn.onclick = () => {
-                clearInterval(countdownInterval);
-                if (isSuccess) {
-                    closeAndExit();
-                } else {
-                    overlay.classList.add('hidden');
-                }
-            };
         }
 
-        function closeAndExit() {
-            debugLog('🚪 Closing registration window or redirecting to main page', 'info');
-            document.getElementById('custom-alert-overlay').classList.add('hidden');
-            window.location.href = './index.html';
+        // Debug Console
+        document.getElementById('debug-toggle').onclick = () => {
+            const c = document.getElementById('debug-console');
+            c.style.display = c.style.display === 'none' ? 'block' : 'none';
+        };
+        function debug(msg, isError = false) {
+            const d = document.getElementById('debug-console');
+            const l = document.createElement('div');
+            l.className = isError ? 'debug-entry debug-error' : 'debug-entry debug-success';
+            l.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            d.prepend(l);
         }
-
     </script>
 </body>
 </html>
