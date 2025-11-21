@@ -2,107 +2,36 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ลงทะเบียนพนักงาน</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary-color: #06C755; --error-color: #ff6b6b; --success-color: #51cf66; }
-        body { 
-            font-family: 'Kanit', sans-serif; 
-            background-color: #f0f2f5; 
-            margin: 0; 
-            padding: 1rem; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-            box-sizing: border-box; 
-        }
-        .card { 
-            background-color: #ffffff; 
-            border-radius: 8px; 
-            padding: 1.5rem; 
-            width: 100%; 
-            max-width: 500px; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
-        }
-        .view-title { 
-            font-size: 1.5rem; 
-            font-weight: 700; 
-            text-align: center; 
-            margin-bottom: 1.5rem; 
-            color: #333; 
-        }
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; margin: 0; padding: 1rem; display: flex; justify-content: center; align-items: center; min-height: 100vh; box-sizing: border-box; }
+        .card { background-color: #ffffff; border-radius: 8px; padding: 1.5rem; width: 100%; max-width: 500px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .view-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 1.5rem; color: #333; }
         form { display: flex; flex-direction: column; gap: 1rem; }
         .form-group label { font-weight: 500; margin-bottom: 0.25rem; color: #555; }
-        .form-group input, .form-group select { 
-            width: 100%; 
-            padding: 0.75rem; 
-            border: 1px solid #e0e0e0; 
-            border-radius: 6px; 
-            font-family: 'Kanit', sans-serif; 
-            font-size: 1rem; 
-            box-sizing: border-box; 
-            transition: border-color 0.2s; 
-        }
-        
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(6, 199, 85, 0.2);
-        }
-        .required-field::after {
-            content: " *";
-            color: var(--error-color);
-            font-weight: bold;
-        }
-        
-        .btn-submit { 
-            width: 100%; 
-            padding: 1rem; 
-            border-radius: 8px; 
-            border: none; 
-            font-size: 1rem; 
-            font-weight: 700; 
-            cursor: pointer; 
-            background-color: #06C755; 
-            color: white; 
-            margin-top: 1rem; 
-            transition: background-color 0.2s; 
-        }
-        .btn-submit:disabled { background-color: #cccccc; cursor: not-allowed; }
-        .btn-submit:hover:not(:disabled) { background-color: #05b34a; }
-        
-        #loading-view { text-align: center; position: fixed; inset: 0; background: white; z-index: 999; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .spinner { 
-            border: 4px solid rgba(0,0,0,0.1); 
-            width: 36px; 
-            height: 36px; 
-            border-radius: 50%; 
-            border-left-color: #06C755; 
-            animation: spin 1s linear infinite; 
-            margin-bottom: 1rem;
-        }
+        .form-group input, .form-group select { width: 100%; padding: 0.75rem; border: 1px solid #e0e0e0; border-radius: 6px; font-family: 'Kanit', sans-serif; font-size: 1rem; box-sizing: border-box; }
+        .btn-submit { width: 100%; padding: 1rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; background-color: #06C755; color: white; margin-top: 1rem; }
+        .btn-submit:disabled { background-color: #cccccc; }
+        #loading-view { text-align: center; }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #06C755; animation: spin 1s linear infinite; margin: 2rem auto; }
         .hidden { display: none !important; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        
-        /* Custom Popup Styles */
-        #custom-alert-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        #custom-alert-box { background-color: white; padding: 2rem; border-radius: 12px; text-align: center; width: 85%; max-width: 450px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        #custom-alert-title { margin-top: 0; font-size: 1.25rem; font-weight: 700; color: #333; }
-        #custom-alert-message { font-size: 1rem; color: #555; margin-bottom: 1.5rem; white-space: pre-wrap; line-height: 1.5; }
-        #custom-alert-close-btn { width: 100%; padding: 0.75rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 500; cursor: pointer; background-color: #06C755; color: white; }
-        .confirmation-buttons { display: flex; gap: 1rem; justify-content: center; }
-        .btn-confirm, .btn-cancel { flex: 1; padding: 0.75rem 1.5rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
-        .btn-confirm { background-color: #06C755; color: white; }
-        .btn-cancel { background-color: #f44336; color: white; }
 
-        /* Debug Console */
-        #debug-toggle { display: none; position: fixed; bottom: 10px; right: 10px; background: #333; color: white; border: none; padding: 8px 12px; border-radius: 20px; cursor: pointer; font-size: 12px; z-index: 1002; }
-        #debug-console { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 200px; background: rgba(0,0,0,0.9); color: #0f0; font-family: monospace; font-size: 11px; z-index: 1001; overflow-y: auto; padding: 10px; }
-        .debug-entry { margin-bottom: 4px; border-bottom: 1px solid #333; }
-        .debug-error { color: #ff6b6b; } .debug-success { color: #51cf66; }
+        /* Popup Styles */
+        #custom-alert-overlay, #confirm-dialog-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        #custom-alert-box, #confirm-dialog-box { background-color: white; padding: 2rem; border-radius: 12px; text-align: center; width: 80%; max-width: 400px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        #custom-alert-title, #confirm-dialog-title { margin-top: 0; font-size: 1.25rem; font-weight: 700; }
+        #custom-alert-message, #confirm-dialog-message { font-size: 1rem; color: #555; margin-bottom: 1.5rem; }
+        #custom-alert-close-btn { width: 100%; padding: 0.75rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 500; cursor: pointer; background-color: #06C755; color: white; }
+        
+        .confirm-actions { display: flex; gap: 10px; justify-content: center; }
+        .btn-confirm { flex: 1; padding: 0.75rem; border-radius: 8px; border: none; cursor: pointer; background-color: #06C755; color: white; font-weight: bold; }
+        .btn-cancel { flex: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background-color: #fff; color: #333; }
+        .confirm-list { text-align: left; margin-bottom: 1.5rem; font-size: 0.9rem; background: #f9f9f9; padding: 10px; border-radius: 6px; }
+        .confirm-list p { margin: 5px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -113,229 +42,183 @@
 
     <div id="register-form-container" class="card hidden">
         <h2 class="view-title">ลงทะเบียนพนักงานใหม่</h2>
-        <p style="text-align: center; margin-top: -1rem; margin-bottom: 1.5rem; color: #777;">
-            กรุณากรอกข้อมูลของคุณเพื่อเริ่มใช้งานระบบ
-        </p>
+        <p style="text-align: center; margin-top: -1rem; margin-bottom: 1.5rem; color: #777;">กรุณากรอกข้อมูลของคุณเพื่อเริ่มใช้งานระบบ</p>
         <form id="register-form">
-            <div class="form-group">
-                <label for="fullName" class="required-field">ชื่อ - นามสกุล</label>
-                <input type="text" id="fullName" required placeholder="เช่น สมชาย ใจดี" maxlength="100">
-            </div>
-            <div class="form-group">
-                <label for="licensePlate" class="required-field">ทะเบียนรถ</label>
-                <input type="text" id="licensePlate" required placeholder="เช่น 1กก-9999 กทม" maxlength="20">
-            </div>
-            <div class="form-group">
-                <label for="contactNumber" class="required-field">เบอร์ติดต่อ</label>
-                <input type="tel" id="contactNumber" required placeholder="เช่น 0909999999" pattern="[0-9]{10}" maxlength="10">
-            </div>
-            <div class="form-group">
-                <label for="branch" class="required-field">สาขา</label>
-                <select id="branch" required>
-                    <option value="" disabled selected>-- กรุณาเลือกสาขา --</option>
-                </select>
-            </div>
-            <button type="submit" class="btn-submit">ลงทะเบียน</button>
+            <div class="form-group"><label for="fullName">ชื่อ - นามสกุล</label><input type="text" id="fullName" required placeholder="เช่น สมชาย ใจดี"></div>
+            <div class="form-group"><label for="licensePlate">ทะเบียนรถ</label><input type="text" id="licensePlate" required placeholder="เช่น 1กก-9999 กทม"></div>
+            <div class="form-group"><label for="contactNumber">เบอร์ติดต่อ</label><input type="tel" id="contactNumber" required placeholder="เช่น 0909999999"></div>
+            <div class="form-group"><label for="branch">สาขา</label><select id="branch" required><option value="" disabled selected>-- กรุณาเลือกสาขา --</option></select></div>
+            <button type="submit" class="btn-submit">ตรวจสอบข้อมูล</button>
         </form>
     </div>
 
+    <!-- Alert Popup -->
     <div id="custom-alert-overlay" class="hidden">
         <div id="custom-alert-box">
             <h3 id="custom-alert-title"></h3>
             <p id="custom-alert-message"></p>
-            <button id="custom-alert-close-btn" class="hidden"></button>
-            <div id="confirmation-buttons" class="confirmation-buttons hidden">
-                <button id="confirmation-yes-btn" class="btn-confirm">ยืนยัน</button>
-                <button id="confirmation-no-btn" class="btn-cancel">ยกเลิก</button>
+            <button id="custom-alert-close-btn"></button>
+        </div>
+    </div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirm-dialog-overlay" class="hidden">
+        <div id="confirm-dialog-box">
+            <h3 id="confirm-dialog-title">ยืนยันการลงทะเบียน</h3>
+            <div id="confirm-dialog-content" class="confirm-list"></div>
+            <div class="confirm-actions">
+                <button id="confirm-btn-cancel" class="btn-cancel">แก้ไข</button>
+                <button id="confirm-btn-ok" class="btn-confirm">ยืนยัน</button>
             </div>
         </div>
     </div>
 
-    <button id="debug-toggle">BUG</button>
-    <div id="debug-console"></div>
-
     <script>
         const LIFF_ID = '2008326721-bmkWomzv'; 
-        // ★★★★★ แก้ไข URL ตรงนี้ให้ตรงกับ index.html ★★★★★
         const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzVZDc9PIiKF_9OWofaVTaA_07dDDvY6ljPR37eq-yrRCcebzp_MNB2dGcsM0_QHtaUVg/exec';
 
         let liffProfile = null;
-        let countdownInterval;
-        let isAdmin = false;
 
-        // --- INIT ---
-        window.onload = async () => {
+        async function main() {
             try {
                 await liff.init({ liffId: LIFF_ID });
-                if (!liff.isLoggedIn()) { 
-                    liff.login(); 
-                    return; 
-                }
-                
+                if (!liff.isLoggedIn()) { liff.login(); return; }
                 liffProfile = await liff.getProfile();
                 
-                // Check Admin for Debug Console
-                isAdmin = await serverCall('checkAdminStatus', liffProfile.userId);
-                if (isAdmin) {
-                    document.getElementById('debug-toggle').style.display = 'block';
-                    debug('Admin Detected');
-                }
-
-                // Fetch Branch List
-                debug('Fetching branches...');
                 const branches = await serverCall('getBranchList');
                 populateBranchDropdown(branches);
                 
-                // Setup Validation
-                setupRealTimeValidation();
-                
                 document.getElementById('loading-view').classList.add('hidden');
                 document.getElementById('register-form-container').classList.remove('hidden');
-
             } catch (error) {
-                showCustomAlert('Error', error.message);
-                debug('Error: ' + error.message, true);
-            }
-        };
-
-        // --- SERVER CALL ---
-        async function serverCall(action, ...args) {
-            debug(`Call: ${action}`);
-            try {
-                const response = await fetch(GAS_WEB_APP_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: action, args: args }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-                });
-                const json = await response.json();
-                if (json.status === 'error') throw new Error(json.message);
-                return json.response;
-            } catch (err) {
-                debug(`Error: ${err.message}`, true);
-                throw err;
+                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
+                document.getElementById('loading-view').classList.add('hidden');
             }
         }
 
-        // --- UI LOGIC ---
+        main();
+
         function populateBranchDropdown(branches) {
-            const select = document.getElementById('branch');
+            const selectElement = document.getElementById('branch');
             if (branches && branches.length > 0) {
-                branches.forEach(b => {
-                    const opt = document.createElement('option');
-                    opt.value = b.BranchName;
-                    opt.textContent = b.BranchName;
-                    select.appendChild(opt);
+                branches.forEach(branchName => {
+                    const option = document.createElement('option');
+                    option.value = branchName;
+                    option.textContent = branchName;
+                    selectElement.appendChild(option);
                 });
             }
         }
 
-        function setupRealTimeValidation() {
-            // Number only for Phone
-            document.getElementById('contactNumber').addEventListener('input', function() {
-                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
-            });
-        }
-
-        // --- SUBMIT HANDLER ---
         document.getElementById('register-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            const fullName = document.getElementById('fullName').value.trim();
-            const licensePlate = document.getElementById('licensePlate').value.trim();
-            const contactNumber = document.getElementById('contactNumber').value.trim();
+            const form = e.target;
+            if (!form.checkValidity()) { form.reportValidity(); return; }
+
+            const fullName = document.getElementById('fullName').value;
+            const plate = document.getElementById('licensePlate').value;
+            const contact = document.getElementById('contactNumber').value;
             const branch = document.getElementById('branch').value;
 
-            // Basic Validation
-            if(contactNumber.length !== 10) {
-                showCustomAlert('ข้อมูลไม่ถูกต้อง', 'เบอร์ติดต่อต้องมี 10 หลัก');
-                return;
-            }
+            let htmlContent = `<p><b>ชื่อ:</b> ${fullName}</p>`;
+            htmlContent += `<p><b>ทะเบียนรถ:</b> ${plate}</p>`;
+            htmlContent += `<p><b>เบอร์ติดต่อ:</b> ${contact}</p>`;
+            htmlContent += `<p><b>สาขา:</b> ${branch}</p>`;
 
-            const msg = `ยืนยันข้อมูลการลงทะเบียน:\n\nชื่อ: ${fullName}\nทะเบียน: ${licensePlate}\nเบอร์: ${contactNumber}\nสาขา: ${branch}`;
-
-            showConfirmationPopup('ยืนยันการลงทะเบียน', msg, async () => {
-                const loading = document.getElementById('loading-view');
-                loading.classList.remove('hidden');
-                loading.querySelector('p').textContent = 'กำลังบันทึกข้อมูล...';
-                document.getElementById('register-form-container').classList.add('hidden');
-
-                try {
-                    const data = { 
-                        userId: liffProfile.userId, 
-                        'ชื่อ - นามสกุล': fullName, 
-                        'ทะเบียนรถ': licensePlate, 
-                        'เบอร์ติดต่อ': contactNumber, 
-                        'สาขา': branch 
-                    };
-                    
-                    const res = await serverCall('registerEmployee', data);
-                    loading.classList.add('hidden');
-                    showCustomAlert('สำเร็จ', res.message, true); // Success = true -> Redirect
-                } catch(err) {
-                    loading.classList.add('hidden');
-                    document.getElementById('register-form-container').classList.remove('hidden');
-                    showCustomAlert('ผิดพลาด', err.message);
-                }
+            showConfirmDialog(htmlContent, () => {
+                submitRegistration(fullName, plate, contact, branch);
             });
         });
 
-        // --- POPUP & UTILS ---
-        function showConfirmationPopup(title, message, onConfirm) {
-            const overlay = document.getElementById('custom-alert-overlay');
-            document.getElementById('custom-alert-title').innerText = title;
-            document.getElementById('custom-alert-message').innerText = message;
-            document.getElementById('confirmation-buttons').classList.remove('hidden');
-            document.getElementById('custom-alert-close-btn').classList.add('hidden');
+        function showConfirmDialog(content, onConfirm) {
+            const overlay = document.getElementById('confirm-dialog-overlay');
+            const contentDiv = document.getElementById('confirm-dialog-content');
+            const okBtn = document.getElementById('confirm-btn-ok');
+            const cancelBtn = document.getElementById('confirm-btn-cancel');
+
+            contentDiv.innerHTML = content;
             overlay.classList.remove('hidden');
 
-            document.getElementById('confirmation-yes-btn').onclick = () => {
+            const newOkBtn = okBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newOkBtn.addEventListener('click', () => {
                 overlay.classList.add('hidden');
                 onConfirm();
-            };
-            document.getElementById('confirmation-no-btn').onclick = () => {
+            });
+            newCancelBtn.addEventListener('click', () => {
                 overlay.classList.add('hidden');
-            };
+            });
         }
 
-        function showCustomAlert(title, message, isSuccess = false) {
-            const overlay = document.getElementById('custom-alert-overlay');
-            document.getElementById('custom-alert-title').innerText = title;
-            document.getElementById('custom-alert-message').innerText = message;
-            document.getElementById('confirmation-buttons').classList.add('hidden');
-            const closeBtn = document.getElementById('custom-alert-close-btn');
-            closeBtn.classList.remove('hidden');
-            overlay.classList.remove('hidden');
+        async function submitRegistration(fullName, plate, contact, branch) {
+            document.getElementById('register-form-container').classList.add('hidden');
+            document.getElementById('loading-view').classList.remove('hidden');
+            document.querySelector('#loading-view p').textContent = 'กำลังลงทะเบียน...';
 
-            if (isSuccess) {
-                let count = 3;
-                closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${count})`;
-                const interval = setInterval(() => {
-                    count--;
-                    closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${count})`;
-                    if(count <= 0) {
-                        clearInterval(interval);
-                        window.location.href = 'index.html';
-                    }
-                }, 1000);
-                closeBtn.onclick = () => window.location.href = 'index.html';
-            } else {
-                closeBtn.textContent = 'ตกลง';
-                closeBtn.onclick = () => overlay.classList.add('hidden');
+            const data = { userId: liffProfile.userId, 'ชื่อ - นามสกุล': fullName, 'ทะเบียนรถ': plate, 'เบอร์ติดต่อ': contact, 'สาขา': branch };
+
+            try {
+                const result = await serverCall('registerEmployee', data);
+                document.getElementById('loading-view').classList.add('hidden');
+                showCustomAlert(`คุณ ${liffProfile.displayName}`, result.message, true);
+            } catch (error) {
+                document.getElementById('loading-view').classList.add('hidden');
+                document.getElementById('register-form-container').classList.remove('hidden');
+                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
             }
         }
-
-        // Debug Console
-        document.getElementById('debug-toggle').onclick = () => {
-            const c = document.getElementById('debug-console');
-            c.style.display = c.style.display === 'none' ? 'block' : 'none';
-        };
-        function debug(msg, isError = false) {
-            const d = document.getElementById('debug-console');
-            const l = document.createElement('div');
-            l.className = isError ? 'debug-entry debug-error' : 'debug-entry debug-success';
-            l.innerText = `[${new Date().toLocaleTimeString()}] ${msg}`;
-            d.prepend(l);
+        
+        function serverCall(action, ...args) {
+            const url = GAS_WEB_APP_URL;
+            const payload = { action: action, args: args };
+            return fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'text/plain;charset=utf-8' }, mode: 'cors' })
+                .then(response => response.json())
+                .then(data => { if (data.status === 'error') { throw new Error(data.message); } return data.response; });
         }
+
+        let countdownInterval;
+        function showCustomAlert(title, message, isSuccess = false) {
+            const overlay = document.getElementById('custom-alert-overlay');
+            const titleEl = document.getElementById('custom-alert-title');
+            const messageEl = document.getElementById('custom-alert-message');
+            const closeBtn = document.getElementById('custom-alert-close-btn');
+
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            overlay.classList.remove('hidden');
+            clearInterval(countdownInterval);
+
+            if (isSuccess) {
+                let countdown = 5;
+                closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
+                countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
+                    } else {
+                        clearInterval(countdownInterval);
+                        closeAndExit();
+                    }
+                }, 1000);
+            } else {
+                closeBtn.textContent = 'ตกลง';
+            }
+
+            closeBtn.onclick = () => {
+                clearInterval(countdownInterval);
+                if (isSuccess) { closeAndExit(); } 
+                else { overlay.classList.add('hidden'); }
+            };
+        }
+
+        function closeAndExit() {
+            document.getElementById('custom-alert-overlay').classList.add('hidden');
+            window.location.href = './index.html';
+        }
+
     </script>
 </body>
 </html>
