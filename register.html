@@ -98,18 +98,25 @@
 
         main();
 
-        function populateBranchDropdown(branches) {
+      function populateBranchDropdown(branches) {
             const selectElement = document.getElementById('branch');
+            // ล้างตัวเลือกเก่าออกก่อน (ยกเว้นอันแรก) เพื่อความชัวร์
+            selectElement.innerHTML = '<option value="" disabled selected>-- กรุณาเลือกสาขา --</option>';
+
             if (branches && branches.length > 0) {
-                branches.forEach(branchName => {
+                branches.forEach(branchObj => {
                     const option = document.createElement('option');
-                    option.value = branchName;
-                    option.textContent = branchName;
+                    
+                    // ★★★ จุดแก้ไข: ดึงเฉพาะชื่อสาขา (BranchName) ออกมาใช้ ★★★
+                    // เช็คเผื่อไว้: ถ้าส่งมาเป็น Object ให้ใช้ .BranchName ถ้าเป็น String ให้ใช้เลย
+                    const name = branchObj.BranchName ? branchObj.BranchName : branchObj;
+
+                    option.value = name;
+                    option.textContent = name;
                     selectElement.appendChild(option);
                 });
             }
         }
-
         document.getElementById('register-form').addEventListener('submit', function(e) {
             e.preventDefault();
             const form = e.target;
