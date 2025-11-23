@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; background-color: #f0f2f5; margin: 0; padding: 0; }
+        .header { background-color: #06C755; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .container { padding: 1rem; max-width: 1200px; margin: 0 auto; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        .filter-group { display: flex; flex-direction: column; }
+        .filter-group label { margin-bottom: 0.5rem; font-weight: 500; }
+        .filter-group input, .filter-group select { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-family: 'Kanit', sans-serif; }
+        .btn { background-color: #06C755; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: 'Kanit', sans-serif; }
+        .btn:hover { background-color: #05b048; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .kpi-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.3rem; border-radius: 8px; text-align: center; }
+        .kpi-value { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .kpi-label { font-size: 0.9rem; opacity: 0.9; }
+        .chart-wrapper { position: relative; height: 300px; }
+        .table-container { overflow-x: auto; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 0.6rem; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+        .data-table th { background-color: #f8f9fa; font-weight: 600; white-space: nowrap; }
+        .loading { text-align: center; padding: 2rem; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #06C755; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .hidden { display: none; }
+        .back-link { color: white; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { text-decoration: underline; }
+        .error-message { background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; margin: 1rem 0; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 KPI Dashboard</h1>
+        <a href="index.html" class="back-link">← กลับหน้าหลัก</a>
+    </div>
+
+    <div class="container">
+        <!-- Filters -->
+        <div class="card">
+            <h3>🔍 ตัวกรอง</h3>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="startDate">วันที่เริ่ม:</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="filter-group">
+                    <label for="endDate">วันที่สิ้นสุด:</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="filter-group">
+                    <label for="branchFilter">สาขา:</label>
+                    <select id="branchFilter">
+                        <option value="">ทั้งหมด</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="btn" onclick="loadKpiData()">🔄 อัปเดตข้อมูล</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="card loading">
+            <div class="spinner"></div>
+            <p id="loading-text">กำลังโหลดข้อมูล...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="error-message hidden"></div>
+
+        <!-- KPI Summary -->
+        <div id="kpi-summary" class="hidden">
+            <h3>📈 สรุป KPI</h3>
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="totalRecords">0</div>
+                    <div class="kpi-label">บันทึกทั้งหมด</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="attendanceRate">0%</div>
+                    <div class="kpi-label">อัตราการมาตรงเวลา</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="successRate">0%</div>
+                    <div class="kpi-label">อัตราส่งสำเร็จ</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="avgTrips">0</div>
+                    <div class="kpi-label">รอบเฉลี่ยต่อบันทึก</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="totalDistance">0</div>
+                    <div class="kpi-label">ระยะทางรวม (กม.)</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="overtimeCount">0</div>
+                    <div class="kpi-label">วันที่มี OT (>8 ชม.)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div id="charts-section" class="hidden">
+            <div class="card">
+                <h3>📊 แนวโน้มรายวัน (Trip / Success Rate)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>🏢 เปรียบเทียบสาขา (รอบ & อัตราส่งสำเร็จ)</h3>
+                <div class="chart-wrapper">
+                    <canvas id="branchChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Stats Table -->
+        <div id="employee-stats" class="card hidden">
+            <h3>👥 สถิติรายบุคคล</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ชื่อ-นามสกุล</th>
+                            <th>สาขา</th>
+                            <th>วันทำงาน</th>
+                            <th>มาตรงเวลา</th>
+                            <th>มาสาย</th>
+                            <th>วัน OT</th>
+                            <th>อัตราตรงเวลา</th>
+                            <th>อัตราส่งสำเร็จ</th>
+                            <th>รอบเฉลี่ย/วัน</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeeTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Branch Stats Table -->
+        <div id="branch-stats" class="card hidden">
+            <h3>🏢 สถิติรายสาขา</h3>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>สาขา</th>
+                            <th>จำนวนบันทึก</th>
+                            <th>รอบเฉลี่ย</th>
+                            <th>อัตราส่งสำเร็จ</th>
+                            <th>ระยะทางเฉลี่ย</th>
+                            <th>ชั่วโมงเฉลี่ย</th>
+                        </tr>
+                    </thead>
+                    <tbody id="branchTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzVZDc9PIiKF_9OWofaVTaA_07dDDvY6ljPR37eq-yrRCcebzp_MNB2dGcsM0_QHtaUVg/exec';
+        
+        let trendChart = null;
+        let branchChart = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+        });
+
+        function initializeDashboard() {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('endDate').value = formatDateForInput(today);
+            document.getElementById('startDate').value = formatDateForInput(thirtyDaysAgo);
+            
+            loadBranches().then(() => {
+                loadKpiData();
+            });
+        }
+
+        async function loadBranches() {
+            try {
+                const branches = await serverCall('getBranchList');
+                const branchSelect = document.getElementById('branchFilter');
+                branches.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch.BranchName || branch;
+                    option.textContent = branch.BranchName || branch;
+                    branchSelect.appendChild(option);
+                });
+            } catch (error) {
+                showError('ไม่สามารถโหลดรายการสาขาได้: ' + mapFinalErrorMessage(error));
+            }
+        }
+
+        async function loadKpiData() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const branchFilter = document.getElementById('branchFilter').value;
+            
+            if (!startDate || !endDate) { showError('กรุณาเลือกช่วงวันที่'); return; }
+            if (new Date(startDate) > new Date(endDate)) { showError('วันที่เริ่มต้องไม่เกินวันที่สิ้นสุด'); return; }
+
+            showLoading(true); hideError();
+
+            try {
+                const kpiData = await serverCall('getKpiData', startDate, endDate, branchFilter);
+                displayKpiData(kpiData);
+                showLoading(false);
+            } catch (error) {
+                showError(mapFinalErrorMessage(error));
+                showLoading(false);
+            }
+        }
+
+        function displayKpiData(data) {
+            if (!data || !data.summary || data.summary.totalRecords === 0) {
+                showError('ไม่มีข้อมูลในช่วงวันที่ที่เลือก');
+                document.getElementById('kpi-summary').classList.add('hidden');
+                document.getElementById('charts-section').classList.add('hidden');
+                document.getElementById('employee-stats').classList.add('hidden');
+                document.getElementById('branch-stats').classList.add('hidden');
+                return;
+            }
+
+            const { summary, employeeStats, branchStats, dailyTrends } = data;
+
+            // Summary
+            document.getElementById('totalRecords').textContent = summary.totalRecords;
+            document.getElementById('attendanceRate').textContent = summary.attendanceRate + '%';
+            document.getElementById('successRate').textContent = summary.successRate + '%';
+            document.getElementById('avgTrips').textContent = summary.avgTripsPerRecord;
+            document.getElementById('totalDistance').textContent = summary.totalDistance;
+            document.getElementById('overtimeCount').textContent = summary.overtimeCount;
+
+            document.getElementById('kpi-summary').classList.remove('hidden');
+
+            // Charts
+            if (dailyTrends && dailyTrends.length > 0) {
+                document.getElementById('charts-section').classList.remove('hidden');
+                renderTrendChart(dailyTrends);
+            } else {
+                document.getElementById('charts-section').classList.add('hidden');
+            }
+            
+            if (branchStats && branchStats.length > 0) {
+                renderBranchChart(branchStats);
+            }
+
+            // Tables
+            if (employeeStats && employeeStats.length > 0) {
+                document.getElementById('employee-stats').classList.remove('hidden');
+                renderEmployeeTable(employeeStats);
+            } else { document.getElementById('employee-stats').classList.add('hidden'); }
+
+            if (branchStats && branchStats.length > 0) {
+                document.getElementById('branch-stats').classList.remove('hidden');
+                renderBranchTable(branchStats);
+            } else { document.getElementById('branch-stats').classList.add('hidden'); }
+        }
+
+        function renderTrendChart(trends) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            if (trendChart) trendChart.destroy();
+            const labels = trends.map(t => t.date);
+            const trips = trends.map(t => t.totalTrips || 0); // Or avgTrips
+            const successRate = trends.map(t => parseFloat(t.successRate || 0));
+
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'จำนวนรอบ (Trips)', data: trips, borderColor: '#4a90e2', backgroundColor: 'rgba(74,144,226,0.2)', yAxisID: 'y' },
+                        { label: 'อัตราส่งสำเร็จ (%)', data: successRate, borderColor: '#06C755', backgroundColor: 'rgba(6,199,85,0.2)', yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { type: 'linear', position: 'left', title: { display: true, text: 'Trips' } },
+                        y1: { type: 'linear', position: 'right', title: { display: true, text: '% Success' }, min: 0, max: 100, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        }
+
+        function renderBranchChart(stats) {
+            const ctx = document.getElementById('branchChart').getContext('2d');
+            if (branchChart) branchChart.destroy();
+            const labels = stats.map(b => b.branch || '-');
+            const avgTrips = stats.map(b => parseFloat(b.avgTrips || 0));
+            const successRate = stats.map(b => parseFloat(b.successRate || 0));
+
+            branchChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'รอบเฉลี่ย', data: avgTrips, backgroundColor: 'rgba(74,144,226,0.7)', yAxisID: 'y' },
+                        { label: 'อัตราส่งสำเร็จ (%)', data: successRate, backgroundColor: 'rgba(6,199,85,0.7)', yAxisID: 'y1' }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        y: { type: 'linear', position: 'left', title: { display: true, text: 'Trips' } },
+                        y1: { type: 'linear', position: 'right', title: { display: true, text: '% Success' }, min: 0, max: 100, grid: { drawOnChartArea: false } }
+                    }
+                }
+            });
+        }
+
+        function renderEmployeeTable(stats) {
+            const tbody = document.getElementById('employeeTableBody');
+            tbody.innerHTML = '';
+            stats.forEach(emp => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${emp.name||'-'}</td><td>${emp.branch||'-'}</td><td>${emp.totalDays||0}</td><td>${emp.onTimeDays||0}</td><td>${emp.lateDays||0}</td><td>${emp.overtimeDays||0}</td><td>${emp.attendanceRate}%</td><td>${emp.successRate}%</td><td>${emp.avgTripsPerDay}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderBranchTable(stats) {
+            const tbody = document.getElementById('branchTableBody');
+            tbody.innerHTML = '';
+            stats.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${b.branch||'-'}</td><td>${b.totalRecords||0}</td><td>${b.avgTrips||0}</td><td>${b.successRate||0}%</td><td>${b.avgDistance||0}</td><td>${b.avgHours||0}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // -------- ServerCall with Thai Errors --------
+        async function serverCall(action, ...args) {
+            const url = GAS_WEB_APP_URL;
+            const payload = { action, args };
+            const maxRetries = 3;
+            const timeoutMs = 30000;
+            const loadingTextElement = document.getElementById('loading-text');
+            const originalText = loadingTextElement ? loadingTextElement.textContent : '';
+
+            const fetchWithTimeout = (resource, options={}) => new Promise((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs);
+                fetch(resource, options).then(r => { clearTimeout(timer); resolve(r); }).catch(e => { clearTimeout(timer); reject(e); });
+            });
+
+            for (let i=0;i<maxRetries;i++){
+                try{
+                    if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new Error('OFFLINE');
+                    const res = await fetchWithTimeout(url, {
+                        method: 'POST',
+                        body: JSON.stringify(payload),
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        mode: 'cors'
+                    });
+                    if (!res.ok) throw new Error(`HTTP_${res.status}`);
+                    let json; try { json = await res.json(); } catch(e){ throw new Error('BAD_JSON'); }
+                    if (json.status === 'error') throw new Error(`SERVER_MSG:${json.message}`);
+                    return json.response;
+                } catch(err){
+                    const isLast = i === maxRetries-1;
+                    if (!isLast && loadingTextElement){
+                        loadingTextElement.innerHTML = `${originalText}<br><span style="font-size: 0.9rem; color: #f5a623;">${mapRetryHint(err, i+2, maxRetries)}</span>`;
+                    }
+                    if (isLast) throw err;
+                    await new Promise(r=>setTimeout(r,2000));
+                }
+            }
+        }
+
+        function mapHttpStatusToThai(status){
+            switch(Number(status)){
+                case 401: case 403: return 'คุณไม่มีสิทธิ์เข้าถึงข้อมูล กรุณาติดต่อผู้ดูแลระบบครับ';
+                case 404: return 'ไม่พบปลายทางของบริการ กรุณาติดต่อผู้ดูแลระบบครับ';
+                case 429: return 'มีการเรียกใช้งานบ่อยเกินไป กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+                case 500: return 'เซิร์ฟเวอร์เกิดข้อผิดพลาดภายใน กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+                case 503: return 'เซิร์ฟเวอร์ไม่พร้อมใช้งาน กรุณารอ 5 นาที สักครู่แล้วลองใหม่ครับ';
+                default: return `เซิร์ฟเวอร์ตอบสนองผิดพลาด (รหัส: ${status}) กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ`;
+            }
+        }
+        function mapRetryHint(err, attempt, max){
+            if (err.message==='OFFLINE') return `อุปกรณ์ออฟไลน์ กำลังตรวจสอบการเชื่อมต่อ (ครั้งที่ ${attempt}/${max})`;
+            if (err.message==='TIMEOUT') return `การเชื่อมต่อช้า กำลังลองใหม่... (ครั้งที่ ${attempt}/${max})`;
+            return `สัญญาณไม่เสถียร กำลังลองเชื่อมต่อใหม่... (ครั้งที่ ${attempt}/${max})`;
+        }
+        function mapFinalErrorMessage(err){
+            if (err.message==='OFFLINE') return 'อุปกรณ์ของคุณไม่ได้เชื่อมต่ออินเทอร์เน็ต กรุณาเชื่อมต่อแล้วลองใหม่อีกครั้งครับ';
+            if (err.message==='TIMEOUT') return 'การเชื่อมต่อใช้เวลานานเกินไป กรุณาตรวจสอบสัญญาณอินเทอร์เน็ต และรอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+            if (err.message.startsWith('HTTP_')) return mapHttpStatusToThai(err.message.split('_')[1]);
+            if (err.message.startsWith('SERVER_MSG:')) return err.message.replace('SERVER_MSG:','');
+            if (err.message==='BAD_JSON') return 'ข้อมูลที่ได้รับจากเซิร์ฟเวอร์ไม่ถูกต้อง กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+            if (err.message.includes('Failed to fetch')) return 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต และรอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+            return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+        }
+
+        // Utils
+        function showLoading(show) { const el = document.getElementById('loading'); if(show) el.classList.remove('hidden'); else el.classList.add('hidden'); }
+        function showError(msg) { const el = document.getElementById('error-message'); el.textContent = msg; el.classList.remove('hidden'); }
+        function hideError() { document.getElementById('error-message').classList.add('hidden'); }
+        function formatDateForInput(date) { return date.toISOString().split('T')[0]; }
+        function formatDateForDisplay(dateStr) { const d=new Date(dateStr); const day=String(d.getDate()).padStart(2,'0'); const month=String(d.getMonth()+1).padStart(2,'0'); return `${day}/${month}`; }
+    </script>
+</body>
+</html>
