@@ -19,6 +19,9 @@
         .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: #06C755; animation: spin 1s linear infinite; margin: 2rem auto; }
         .hidden { display: none !important; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Error Banner */
+        .error-banner { background-color: #f8d7da; color: #721c24; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; border: 1px solid #f5c6cb; display: none; }
 
         /* Popup Styles */
         #custom-alert-overlay, #confirm-dialog-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
@@ -26,7 +29,6 @@
         #custom-alert-title, #confirm-dialog-title { margin-top: 0; font-size: 1.25rem; font-weight: 700; }
         #custom-alert-message, #confirm-dialog-message { font-size: 1rem; color: #555; margin-bottom: 1.5rem; }
         #custom-alert-close-btn { width: 100%; padding: 0.75rem; border-radius: 8px; border: none; font-size: 1rem; font-weight: 500; cursor: pointer; background-color: #06C755; color: white; }
-        
         .confirm-actions { display: flex; gap: 10px; justify-content: center; }
         .btn-confirm { flex: 1; padding: 0.75rem; border-radius: 8px; border: none; cursor: pointer; background-color: #06C755; color: white; font-weight: bold; }
         .btn-cancel { flex: 1; padding: 0.75rem; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; background-color: #fff; color: #333; }
@@ -37,12 +39,15 @@
 <body>
     <div id="loading-view">
         <div class="spinner"></div>
-        <p>กำลังเตรียมหน้าลงทะเบียน...</p>
+        <p id="loading-text">กำลังเตรียมหน้าลงทะเบียน...</p>
     </div>
 
     <div id="register-form-container" class="card hidden">
         <h2 class="view-title">ลงทะเบียนพนักงานใหม่</h2>
         <p style="text-align: center; margin-top: -1rem; margin-bottom: 1.5rem; color: #777;">กรุณากรอกข้อมูลของคุณเพื่อเริ่มใช้งานระบบ</p>
+        
+        <div id="error-banner" class="error-banner"></div>
+
         <form id="register-form">
             <div class="form-group"><label for="fullName">ชื่อ - นามสกุล</label><input type="text" id="fullName" required placeholder="เช่น สมชาย ใจดี"></div>
             <div class="form-group"><label for="licensePlate">ทะเบียนรถ</label><input type="text" id="licensePlate" required placeholder="เช่น 1กก-9999 กทม"></div>
@@ -52,26 +57,8 @@
         </form>
     </div>
 
-    <!-- Alert Popup -->
-    <div id="custom-alert-overlay" class="hidden">
-        <div id="custom-alert-box">
-            <h3 id="custom-alert-title"></h3>
-            <p id="custom-alert-message"></p>
-            <button id="custom-alert-close-btn"></button>
-        </div>
-    </div>
-
-    <!-- Confirmation Dialog -->
-    <div id="confirm-dialog-overlay" class="hidden">
-        <div id="confirm-dialog-box">
-            <h3 id="confirm-dialog-title">ยืนยันการลงทะเบียน</h3>
-            <div id="confirm-dialog-content" class="confirm-list"></div>
-            <div class="confirm-actions">
-                <button id="confirm-btn-cancel" class="btn-cancel">แก้ไข</button>
-                <button id="confirm-btn-ok" class="btn-confirm">ยืนยัน</button>
-            </div>
-        </div>
-    </div>
+    <div id="custom-alert-overlay" class="hidden"><div id="custom-alert-box"><h3 id="custom-alert-title"></h3><p id="custom-alert-message"></p><button id="custom-alert-close-btn"></button></div></div>
+    <div id="confirm-dialog-overlay" class="hidden"><div id="confirm-dialog-box"><h3 id="confirm-dialog-title">ยืนยันการลงทะเบียน</h3><div id="confirm-dialog-content" class="confirm-list"></div><div class="confirm-actions"><button id="confirm-btn-cancel" class="btn-cancel">แก้ไข</button><button id="confirm-btn-ok" class="btn-confirm">ยืนยัน</button></div></div></div>
 
     <script>
         const LIFF_ID = '2008326721-bmkWomzv'; 
@@ -91,34 +78,29 @@
                 document.getElementById('loading-view').classList.add('hidden');
                 document.getElementById('register-form-container').classList.remove('hidden');
             } catch (error) {
-                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
+                showCustomAlert('เกิดข้อผิดพลาด', mapFinalErrorMessage(error), false);
                 document.getElementById('loading-view').classList.add('hidden');
             }
         }
 
         main();
 
-      function populateBranchDropdown(branches) {
+        function populateBranchDropdown(branches) {
             const selectElement = document.getElementById('branch');
-            // ล้างตัวเลือกเก่าออกก่อน (ยกเว้นอันแรก) เพื่อความชัวร์
             selectElement.innerHTML = '<option value="" disabled selected>-- กรุณาเลือกสาขา --</option>';
-
             if (branches && branches.length > 0) {
                 branches.forEach(branchObj => {
                     const option = document.createElement('option');
-                    
-                    // ★★★ จุดแก้ไข: ดึงเฉพาะชื่อสาขา (BranchName) ออกมาใช้ ★★★
-                    // เช็คเผื่อไว้: ถ้าส่งมาเป็น Object ให้ใช้ .BranchName ถ้าเป็น String ให้ใช้เลย
                     const name = branchObj.BranchName ? branchObj.BranchName : branchObj;
-
-                    option.value = name;
-                    option.textContent = name;
+                    option.value = name; option.textContent = name;
                     selectElement.appendChild(option);
                 });
             }
         }
+        
         document.getElementById('register-form').addEventListener('submit', function(e) {
             e.preventDefault();
+            document.getElementById('error-banner').style.display = 'none';
             const form = e.target;
             if (!form.checkValidity()) { form.reportValidity(); return; }
 
@@ -127,7 +109,7 @@
             const contact = document.getElementById('contactNumber').value;
             const branch = document.getElementById('branch').value;
 
-            let htmlContent = `<p><b>ชื่อ:</b> ${fullName}</p>`;
+            let htmlContent = `<p><b>ชื่อ - นามสกุล:</b> ${fullName}</p>`;
             htmlContent += `<p><b>ทะเบียนรถ:</b> ${plate}</p>`;
             htmlContent += `<p><b>เบอร์ติดต่อ:</b> ${contact}</p>`;
             htmlContent += `<p><b>สาขา:</b> ${branch}</p>`;
@@ -139,33 +121,29 @@
 
         function showConfirmDialog(content, onConfirm) {
             const overlay = document.getElementById('confirm-dialog-overlay');
-            const contentDiv = document.getElementById('confirm-dialog-content');
+            document.getElementById('confirm-dialog-content').innerHTML = content;
+            overlay.classList.remove('hidden');
             const okBtn = document.getElementById('confirm-btn-ok');
             const cancelBtn = document.getElementById('confirm-btn-cancel');
-
-            contentDiv.innerHTML = content;
-            overlay.classList.remove('hidden');
-
-            const newOkBtn = okBtn.cloneNode(true);
-            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-            const newCancelBtn = cancelBtn.cloneNode(true);
-            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-
-            newOkBtn.addEventListener('click', () => {
-                overlay.classList.add('hidden');
-                onConfirm();
-            });
-            newCancelBtn.addEventListener('click', () => {
-                overlay.classList.add('hidden');
-            });
+            const newOkBtn = okBtn.cloneNode(true); okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            const newCancelBtn = cancelBtn.cloneNode(true); cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+            newOkBtn.addEventListener('click', () => { overlay.classList.add('hidden'); onConfirm(); });
+            newCancelBtn.addEventListener('click', () => { overlay.classList.add('hidden'); });
         }
 
         async function submitRegistration(fullName, plate, contact, branch) {
             document.getElementById('register-form-container').classList.add('hidden');
             document.getElementById('loading-view').classList.remove('hidden');
-            document.querySelector('#loading-view p').textContent = 'กำลังลงทะเบียน...';
+            document.querySelector('#loading-text').textContent = 'กำลังลงทะเบียน...';
 
-            const data = { userId: liffProfile.userId, 'ชื่อ - นามสกุล': fullName, 'ทะเบียนรถ': plate, 'เบอร์ติดต่อ': contact, 'สาขา': branch };
+            const data = { 
+                userId: liffProfile.userId,
+                'ชื่อโปรไฟล์': liffProfile.displayName, // ส่งชื่อโปรไฟล์ไปเก็บ
+                'ชื่อ - นามสกุล': fullName, 
+                'ทะเบียนรถ': plate, 
+                'เบอร์ติดต่อ': contact, 
+                'สาขา': branch 
+            };
 
             try {
                 const result = await serverCall('registerEmployee', data);
@@ -174,110 +152,99 @@
             } catch (error) {
                 document.getElementById('loading-view').classList.add('hidden');
                 document.getElementById('register-form-container').classList.remove('hidden');
-                showCustomAlert('เกิดข้อผิดพลาด', error.message, false);
+                
+                // Show Banner
+                const banner = document.getElementById('error-banner');
+                banner.textContent = mapFinalErrorMessage(error);
+                banner.style.display = 'block';
             }
         }
-        // ฟังก์ชัน serverCall แบบอัปเกรด (Auto-Retry + แจ้งเตือนผู้ใช้)
+        
+        // -------- Robust ServerCall --------
         async function serverCall(action, ...args) {
             const url = GAS_WEB_APP_URL;
-            const payload = { action: action, args: args };
-            const maxRetries = 3; // จำนวนครั้งสูงสุดที่จะลอง
+            const payload = { action, args };
+            const maxRetries = 3;
+            const timeoutMs = 25000;
+            const loadingTextElement = document.getElementById('loading-text');
+            const originalText = loadingTextElement ? loadingTextElement.textContent : '';
 
-            // 1. จำข้อความเดิมไว้ก่อน (เช่น "กำลังบันทึกข้อมูล...")
-            let originalText = "";
-            if (typeof dom !== 'undefined' && dom.loadingText) {
-                originalText = dom.loadingText.textContent; 
-            }
+            const fetchWithTimeout = (resource, options={}) => new Promise((resolve, reject) => {
+                const timer = setTimeout(() => reject(new Error('TIMEOUT')), timeoutMs);
+                fetch(resource, options).then(r => { clearTimeout(timer); resolve(r); }).catch(e => { clearTimeout(timer); reject(e); });
+            });
 
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, {
+            for (let i=0;i<maxRetries;i++){
+                try{
+                    if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new Error('OFFLINE');
+                    const res = await fetchWithTimeout(url, {
                         method: 'POST',
                         body: JSON.stringify(payload),
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         mode: 'cors'
                     });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP Error: ${response.status}`);
+                    if (!res.ok) throw new Error(`HTTP_${res.status}`);
+                    let json; try { json = await res.json(); } catch(e){ throw new Error('BAD_JSON'); }
+                    if (json.status === 'error') throw new Error(`SERVER_MSG:${json.message}`);
+                    return json.response;
+                } catch(err){
+                    const isLast = i === maxRetries-1;
+                    if (!isLast && loadingTextElement){
+                        loadingTextElement.innerHTML = `${originalText}<br><span style="font-size: 0.9rem; color: #f5a623;">${mapRetryHint(err, i+2, maxRetries)}</span>`;
                     }
-
-                    const json = await response.json();
-                    
-                    if (json.status === 'error') {
-                        // ถ้า Server ตอบว่า Error (เช่น ข้อมูลผิด) ไม่ต้องลองใหม่
-                        throw new Error(json.message);
-                    }
-
-                    return json.response; // สำเร็จ! ส่งค่ากลับ
-
-                } catch (error) {
-                    console.warn(`Attempt ${i + 1} failed: ${error.message}`);
-                    
-                    // ถ้าเป็นรอบสุดท้ายแล้วยังพัง ให้โยน Error ออกไป
-                    if (i === maxRetries - 1) {
-                        throw error;
-                    }
-
-                    // ★★★ ส่วนที่เพิ่ม: แจ้งเตือนผู้ใช้ ★★★
-                    if (typeof dom !== 'undefined' && dom.loadingText) {
-                        // เปลี่ยนข้อความให้รู้ว่ากำลังพยายามใหม่
-                        // ใช้สีส้มเพื่อให้ดูเด่นขึ้นเล็กน้อย
-                        dom.loadingText.innerHTML = `
-                            ${originalText}<br>
-                            <span style="font-size: 0.9rem; color: #f5a623; font-weight: normal;">
-                                สัญญาณไม่เสถียร... กำลังเชื่อมต่อใหม่ (ครั้งที่ ${i + 2}/${maxRetries})
-                            </span>
-                        `;
-                    }
-
-                    // รอ 1.5 วินาที (เพิ่มเวลาหน่อยให้อ่านทันและให้ระบบพัก)
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    if (isLast) throw err;
+                    await new Promise(r=>setTimeout(r,2000));
                 }
             }
         }
-        
+
+        function mapHttpStatusToThai(status){
+            switch(Number(status)){
+                case 401: case 403: return 'คุณไม่มีสิทธิ์เข้าถึงข้อมูล กรุณาติดต่อผู้ดูแลระบบครับ';
+                case 404: return 'ไม่พบปลายทางของบริการ กรุณาติดต่อผู้ดูแลระบบครับ';
+                case 429: return 'มีการเรียกใช้งานบ่อยเกินไป กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+                case 500: return 'เซิร์ฟเวอร์เกิดข้อผิดพลาดภายใน กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+                case 503: return 'เซิร์ฟเวอร์ไม่พร้อมใช้งาน กรุณารอ 5 นาที สักครู่แล้วลองใหม่ครับ';
+                default: return `เซิร์ฟเวอร์ตอบสนองผิดพลาด (รหัส: ${status}) กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ`;
+            }
+        }
+        function mapRetryHint(err, attempt, max){
+            if (err.message==='OFFLINE') return `อุปกรณ์ออฟไลน์ กำลังตรวจสอบการเชื่อมต่อ (ครั้งที่ ${attempt}/${max})`;
+            if (err.message==='TIMEOUT') return `การเชื่อมต่อช้า กำลังลองใหม่... (ครั้งที่ ${attempt}/${max})`;
+            return `สัญญาณไม่เสถียร กำลังลองเชื่อมต่อใหม่... (ครั้งที่ ${attempt}/${max})`;
+        }
+        function mapFinalErrorMessage(err){
+            if (err.message==='OFFLINE') return 'อุปกรณ์ของคุณไม่ได้เชื่อมต่ออินเทอร์เน็ต กรุณาเชื่อมต่อแล้วลองใหม่อีกครั้งครับ';
+            if (err.message==='TIMEOUT') return 'การเชื่อมต่อใช้เวลานานเกินไป กรุณาตรวจสอบสัญญาณอินเทอร์เน็ต และรอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+            if (err.message.startsWith('HTTP_')) return mapHttpStatusToThai(err.message.split('_')[1]);
+            if (err.message.startsWith('SERVER_MSG:')) return err.message.replace('SERVER_MSG:','');
+            if (err.message==='BAD_JSON') return 'ข้อมูลที่ได้รับจากเซิร์ฟเวอร์ไม่ถูกต้อง กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+            return 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณารอ 5 นาที แล้วลองใหม่อีกครั้งครับ';
+        }
 
         let countdownInterval;
         function showCustomAlert(title, message, isSuccess = false) {
             const overlay = document.getElementById('custom-alert-overlay');
-            const titleEl = document.getElementById('custom-alert-title');
-            const messageEl = document.getElementById('custom-alert-message');
+            document.getElementById('custom-alert-title').textContent = title;
+            document.getElementById('custom-alert-message').textContent = message;
             const closeBtn = document.getElementById('custom-alert-close-btn');
-
-            titleEl.textContent = title;
-            messageEl.textContent = message;
             overlay.classList.remove('hidden');
             clearInterval(countdownInterval);
-
             if (isSuccess) {
                 let countdown = 5;
                 closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
                 countdownInterval = setInterval(() => {
                     countdown--;
-                    if (countdown > 0) {
-                        closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
-                    } else {
-                        clearInterval(countdownInterval);
-                        closeAndExit();
-                    }
+                    if (countdown > 0) closeBtn.textContent = `ตกลง (ไปหน้าหลักใน ${countdown} วิ)`;
+                    else { clearInterval(countdownInterval); closeAndExit(); }
                 }, 1000);
-            } else {
-                closeBtn.textContent = 'ตกลง';
-            }
-
-            closeBtn.onclick = () => {
-                clearInterval(countdownInterval);
-                if (isSuccess) { closeAndExit(); } 
-                else { overlay.classList.add('hidden'); }
-            };
+            } else { closeBtn.textContent = 'ตกลง'; }
+            closeBtn.onclick = () => { clearInterval(countdownInterval); if (isSuccess) closeAndExit(); else overlay.classList.add('hidden'); };
         }
 
         function closeAndExit() {
-            document.getElementById('custom-alert-overlay').classList.add('hidden');
             window.location.href = './index.html';
         }
-
     </script>
 </body>
 </html>
